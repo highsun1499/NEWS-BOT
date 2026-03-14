@@ -47,16 +47,24 @@ def generate_post(news_group):
 
     try:
         client = genai.Client(api_key=api_key)
+        # 기사 정보를 텍스트로 정리
         context = "\n".join([f"- 제목: {n['title']} / 링크: {n['link']}" for n in news_group])
         today = datetime.now().strftime('%Y년 %m월 %d일')
         
+        # 출력 형식을 고정하기 위한 매우 구체적인 프롬프트
         prompt = (
-            f"너는 뉴스 큐레이터야. 오늘은 {today}이야. 다음 기사들을 읽고 한국어로 요약해줘.\n\n"
+            f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 아래의 [출력 형식]과 완전히 똑같이 한국어로 요약해.\n\n"
+            f"[출력 형식]:\n"
+            f"<h2>핵심 제목</h2>\n\n"
+            f"요약 문장들 (전체 내용을 통합하여 하나의 문단으로 작성하되, 문장 사이 적절한 띄어쓰기 유지)\n\n"
+            f"링크 :\n"
+            f"1번 <a href='URL'>기사 제목 그대로</a>\n"
+            f"2번 <a href='URL'>기사 제목 그대로</a>\n"
+            f"3번 <a href='URL'>기사 제목 그대로</a>\n\n"
             f"작성 규칙:\n"
-            f"1. 가장 핵심이 되는 대표 제목 하나를 <h2> 태그로 작성해.\n"
-            f"2. 전체 내용을 통합하여 핵심 요약 문장 3개를 줄바꿈으로만 작성해. (<ul>이나 <li> 쓰지 마)\n"
-            f"3. 마지막에 '링크 :'라는 문구를 쓰고, 그 아래에 각 기사별로 '1번 기사', '2번 기사' 형태로 하이퍼링크(<a> 태그)를 만들어줘.\n"
-            f"4. <html>이나 ```html 같은 마크다운 태그는 절대 쓰지 말고 순수 HTML 내용만 출력해.\n\n"
+            f"1. 반드시 링크는 한 줄에 하나씩 작성해.\n"
+            f"2. '1번', '2번' 뒤에는 원본 기사의 제목을 그대로 적고 거기에 링크를 걸어.\n"
+            f"3. <html>이나 ```html 같은 마크다운 태그는 절대 쓰지 말고 순수 HTML만 출력해.\n\n"
             f"기사 데이터:\n{context}"
         )
         
@@ -64,8 +72,10 @@ def generate_post(news_group):
             model="gemini-3-flash-preview", 
             contents=prompt
         )
+        
         result = response.text.replace("```html", "").replace("```", "").strip()
         return result
+        
     except Exception as e:
         print(f"AI 에러 발생: {e}")
         return None
@@ -135,9 +145,24 @@ if __name__ == "__main__":
                 file_path = os.path.join(folder_name, filename)
                 
                 with open(file_path, "w", encoding="utf-8") as f:
-                    # 상세페이지에서 다시 밖으로 나갈 때 index.html 경로
-                    f.write(f"<html><head><meta charset='utf-8'><script src='[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)'></script></head><body class='p-10 lg:px-60' style='white-space: pre-wrap; line-height: 1.8;'>{post}<br><br><hr><br><a href='../index.html' class='text-blue-600 font-bold'>← 목록으로 돌아가기</a></body></html>")
-                time.sleep(1)
+                    f.write(f"""
+                    <html>
+                    <head>
+                        <meta charset='utf-8'>
+                        <script src='[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)'></script>
+                        <style>
+                            body {{ line-height: 1.8; }}
+                            a {{ color: #2563eb; text-decoration: underline; }}
+                            h2 {{ font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem; }}
+                        </style>
+                    </head>
+                    <body class='p-10 lg:px-60'>
+                        <div style='white-space: pre-wrap;'>{post}</div>
+                        <br><br><hr><br>
+                        <a href='../index.html' style='font-weight: bold; text-decoration: none;'>← 목록으로 돌아가기</a>
+                    </body>
+                    </html>
+                    """)
         
         update_index_html()
     else:
