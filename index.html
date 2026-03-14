@@ -8,16 +8,37 @@
   </title>
   <script src="https://cdn.tailwindcss.com">
   </script>
-  <style>
-   .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* 구글 번역 툴바 강제로 숨기기 */
-        body { top: 0 !important; }
-        .goog-te-banner-frame.skiptranslate { display: none !important; }
-        .goog-te-gadget { display: none !important; }
-        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
-        #google_translate_element { display: none; }
-  </style>
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+
+    /* 구글 번역 툴바 및 요소들 원천 봉쇄 */
+    body { 
+        top: 0 !important; 
+        position: static !important; 
+    }
+    .goog-te-banner-frame.skiptranslate, 
+    .goog-te-gadget, 
+    header.skiptranslate { 
+        display: none !important; 
+    }
+    .goog-text-highlight { 
+        background-color: transparent !important; 
+        box-shadow: none !important; 
+    }
+    #google_translate_element { 
+        display: none !important; 
+    }
+    
+    /* 번역 후 상단에 생기는 프레임 제거 */
+    iframe.goog-te-banner-frame {
+        display: none !important;
+    }
+    
+    /* 페이지 전체가 아래로 밀리는 현상 방지 */
+    .skiptranslate {
+        display: none !important;
+    }
+</style>
  </head>
  <body class="bg-gray-100 h-screen flex flex-col">
   <header class="bg-white shadow-sm p-4 z-10 flex justify-between items-center px-8">
@@ -219,13 +240,21 @@
         }
 
         // 버튼 클릭 시 호출될 번역 함수
-        function translatePage(langCode) {
-            const selectField = document.querySelector(".goog-te-combo");
-            if (selectField) {
-                selectField.value = langCode;
-                selectField.dispatchEvent(new Event('change'));
-            }
-        }
+function translatePage(langCode) {
+    const selectField = document.querySelector(".goog-te-combo");
+    if (selectField) {
+        selectField.value = langCode;
+        selectField.dispatchEvent(new Event('change'));
+        
+        // 번역 후 브라우저가 강제로 스크롤이나 레이아웃을 옮기는 것 방지
+        setTimeout(() => {
+            document.body.style.top = "0px";
+            // 툴바가 생성되었다면 즉시 제거 시도
+            const toolbar = document.querySelector('.goog-te-banner-frame');
+            if(toolbar) toolbar.style.display = 'none';
+        }, 100);
+    }
+}
   </script>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript">
   </script>
