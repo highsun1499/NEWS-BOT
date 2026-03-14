@@ -17,7 +17,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run Scraper
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # 보안을 위해 Secret 사용
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API }} # 보안을 위해 Secret 사용
         run: python scraper.py
       - name: Commit and Push
         run: |
