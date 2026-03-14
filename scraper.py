@@ -103,10 +103,10 @@ def update_index_html():
 
         # 중요: index.html에서 news 폴더 안의 파일을 가리키도록 경로를 './news/파일명'으로 설정
         links_html += f"""
-        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
-            <span class="text-blue-500 text-xs font-bold uppercase">Breaking News</span>
-            <h2 class="text-xl font-bold mt-2 mb-3">AI 속보 요약 ({display_time})</h2>
-            <a href="./news/{filename_only}" class="text-blue-600 font-semibold hover:underline text-sm">기사 읽기 &rarr;</a>
+        <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition" onclick="loadNews('./news/{filename_only}')">
+            <span class="text-blue-500 text-[10px] font-bold uppercase">Breaking</span>
+            <h2 class="text-sm font-bold mt-1 line-clamp-2">{display_time} - AI 요약 속보</h2>
+            <p class="text-xs text-gray-500 mt-1">클릭하여 내용 보기 &rarr;</p>
         </div>
         """
 
