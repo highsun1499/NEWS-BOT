@@ -38,7 +38,9 @@ def group_similar_news(news_list):
 # 3. Gemini API 포스팅 생성
 def generate_post(news_group):
     api_key = os.environ.get("GEMINI_API")
-    if not api_key: return None
+    if not api_key: 
+        print("API 키가 설정되지 않았습니다.")
+        return None
 
     try:
         client = genai.Client(api_key=api_key)
@@ -46,12 +48,13 @@ def generate_post(news_group):
         prompt = f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 HTML 형식으로 제목(h2), 3줄 요약(ul/li), 참조링크를 작성해줘. <html>태그는 쓰지마:\n{context}"
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash", # API에서 인식 가능한 안정적인 모델명으로 고정
+            model="gemini-2.0-flash", 
             contents=prompt
         )
         return response.text
     except Exception as e:
-        print(f"AI 에러: {e}")
+        # 할당량 초과(429) 등의 에러가 발생하면 여기서 출력됩니다.
+        print(f"AI 에러 발생: {e}")
         return None
 
 # 4. index.html 업데이트
@@ -59,6 +62,7 @@ def update_index_html():
     post_files = sorted(glob.glob("post_*.html"), reverse=True)
     links_html = ""
     
+    # 생성된 포스트 파일들을 리스트로 만듦
     for file in post_files[:15]:
         display_name = file.replace("post_", "").replace(".html", "")
         links_html += f"""
@@ -73,21 +77,28 @@ def update_index_html():
         with open("index.html", "r", encoding="utf-8") as f:
             content = f.read()
 
-        # [수정 포인트] 빈 문자열이었던 태그를 명확하게 지정
+        # 반드시 이 주석이 index.html에 있어야 합니다.
         start_tag = ''
         end_tag = ''
         
+        # 주석 태그가 있을 때만 split을 시도하여 ValueError 방지
         if start_tag in content and end_tag in content:
             parts = content.split(start_tag)
             before = parts[0]
-            after = parts[1].split(end_tag)[1]
-            new_content = before + start_tag + links_html + end_tag + after
-            with open("index.html", "w", encoding="utf-8") as f:
-                f.write(new_content)
-            print("index.html 업데이트 완료")
+            # split 결과가 올바른지 한 번 더 체크
+            after_parts = parts[1].split(end_tag)
+            if len(after_parts) >= 2:
+                after = after_parts[1]
+                new_content = before + start_tag + links_html + end_tag + after
+                with open("index.html", "w", encoding="utf-8") as f:
+                    f.write(new_content)
+                print("index.html 업데이트 완료")
+            else:
+                print("에러: end_tag를 찾을 수 없습니다.")
         else:
-            # 태그가 없을 때 에러를 출력하여 ValueError를 방지함
-            print(f"에러: index.html 내에 {start_tag} 또는 {end_tag} 주석이 없습니다.")
+            print(f"에러: index.html 내에 '{start_tag}' 또는 '{end_tag}' 주석이 없습니다.")
+    else:
+        print("에러: index.html 파일이 없습니다.")
 
 if __name__ == "__main__":
     print("작업 시작...")
@@ -95,11 +106,18 @@ if __name__ == "__main__":
     groups = group_similar_news(all_news)
     
     if groups:
-        for group in groups[:3]: # API 할당량을 고려해 3개 그룹만 생성
+        # API 할당량 문제(429)를 방지하기 위해 2개로 줄임
+        for group in groups[:2]: 
             post = generate_post(group)
             if post:
                 filename = f"post_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{groups.index(group)}.html"
                 with open(filename, "w", encoding="utf-8") as f:
+                    # 간단한 디자인을 위한 Tailwind 포함
                     f.write(f"<html><head><meta charset='utf-8'><script src='https://cdn.tailwindcss.com'></script></head><body class='p-10 lg:px-60'>{post}<br><a href='index.html'>← 목록으로</a></body></html>")
+            else:
+                print("포스팅 생성 실패(API 제한 등)")
         
+        # 뉴스 생성 여부와 관계없이 목록 업데이트 시도
         update_index_html()
+    else:
+        print("수집된 뉴스가 없습니다.")
