@@ -15,7 +15,7 @@ def get_breaking_news():
     items = soup.find_all("item")
     
     breaking_news = []
-    for item in items[:100]: # 최신 10개 확인
+    for item in items[:100]: # 최신 100개 확인
         title = item.title.text
         link = item.link.text
         
