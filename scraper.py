@@ -58,15 +58,21 @@ def generate_post(news_group):
 
     try:
         client = genai.Client(api_key=api_key)
+        
+        # AI에게 전달할 데이터 정리 (제목과 링크 쌍)
         context = "\n".join([f"- 제목: {n['title']} / 링크: {n['link']}" for n in news_group])
         
         today = datetime.now().strftime('%Y년 %m월 %d일')
+        
+        # 요청하신 형식에 맞게 프롬프트 정교화
         prompt = (
-            f"너는 뉴스 큐레이터야. 오늘은 {today}이야. 다음 기사들을 읽고 한국어로 요약해줘.\n"
-            f"형식: 각 뉴스마다 <h2>제목</h2>, <ul>내용 3줄 요약</ul>, 참조링크 순서로 작성해.\n"
-            f"중요: 각 뉴스 아이템 사이에는 반드시 <br><br>를 넣어 간격을 넓혀줘.\n"
-            f"<ul> 태그 안의 <li> 문장들 사이에도 줄간격이 느껴지도록 작성해.\n"
-            f"<html>이나 ```html 같은 마크다운 태그는 절대 쓰지 말고 순수 HTML 내용만 출력해:\n{context}"
+            f"너는 뉴스 큐레이터야. 오늘은 {today}이야. 다음 기사들을 읽고 한국어로 요약해줘.\n\n"
+            f"작성 규칙:\n"
+            f"1. 가장 핵심이 되는 대표 제목 하나를 <h2> 태그로 작성해.\n"
+            f"2. 전체 내용을 통합하여 핵심 요약 문장 3개를 <p> 태그나 리스트 없이 줄바꿈으로만 작성해.\n"
+            f"3. 마지막에 '링크 :'라는 문구를 쓰고, 그 아래에 각 기사별로 '1번 기사', '2번 기사' 형태로 하이퍼링크(<a> 태그)를 만들어줘.\n"
+            f"4. <html>이나 ```html 같은 마크다운 태그는 절대 쓰지 말고 순수 HTML 내용만 출력해.\n\n"
+            f"기사 데이터:\n{context}"
         )
         
         response = client.models.generate_content(
