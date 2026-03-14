@@ -60,7 +60,7 @@ def generate_post(news_group):
             f"마크다운(```) 쓰지 말고 순수 HTML만 출력해.\n\n"
             f"데이터:\n{context}"
         )
-        response = client.models.generate_content(model="gemini-3-flash-preview", contents=prompt)
+        response = client.models.generate_content(model="gemini-3.1-flash-lite", contents=prompt)
         return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
         print(f"AI 에러: {e}"); return None
