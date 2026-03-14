@@ -62,6 +62,7 @@ def update_index_html():
     post_files = sorted(glob.glob("post_*.html"), reverse=True)
     links_html = ""
     
+    # 생성된 포스트 파일들을 리스트로 만듦
     for file in post_files[:15]:
         display_name = file.replace("post_", "").replace(".html", "")
         links_html += f"""
@@ -76,29 +77,26 @@ def update_index_html():
         with open("index.html", "r", encoding="utf-8") as f:
             content = f.read()
 
-        # [수정 포인트] 비어있던 태그에 확실한 이름을 부여합니다.
-        # 사용자님의 index.html에 있는 <section id="news-list"> 안의 내용을 찾도록 합니다.
-        start_tag = ''
-        end_tag = ''
+        # 1. BeautifulSoup을 사용하여 HTML 구조를 분석합니다. (주석 찾기 대신 사용)
+        soup = BeautifulSoup(content, 'html.parser')
         
-        if start_tag in content and end_tag in content:
-            parts = content.split(start_tag)
-            before = parts[0]
-            after_parts = parts[1].split(end_tag)
-            if len(after_parts) >= 2:
-                after = after_parts[1]
-                new_content = before + start_tag + links_html + end_tag + after
-                with open("index.html", "w", encoding="utf-8") as f:
-                    f.write(new_content)
-                print("index.html 업데이트 완료")
-            else:
-                print("에러: end_tag를 찾을 수 없습니다.")
+        # 2. 사용자님 index.html에 있는 <section id="news-list">를 정확히 타겟팅합니다.
+        news_section = soup.find('section', id='news-list')
+        
+        if news_section:
+            # 3. 기존의 "뉴스를 수집 중입니다..." 같은 내용을 싹 비우고 새 뉴스를 넣습니다.
+            news_section.clear()
+            news_section.append(BeautifulSoup(links_html, 'html.parser'))
+            
+            # 4. 최종 결과 저장
+            with open("index.html", "w", encoding="utf-8") as f:
+                f.write(str(soup))
+            print("index.html 업데이트 완료 (구조 분석 방식)")
         else:
-            # [보강] 만약 주석 태그가 없으면 에러를 내지 말고 알려만 줍니다.
-            print("안내: index.html에 주석이 없어 업데이트를 건너뜁니다.")
+            print("에러: index.html에서 id='news-list'인 section을 찾을 수 없습니다.")
     else:
         print("에러: index.html 파일이 없습니다.")
-
+        
 if __name__ == "__main__":
     print("작업 시작...")
     all_news = get_breaking_news()
