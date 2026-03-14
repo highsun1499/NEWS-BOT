@@ -8,21 +8,36 @@ import time
 
 # 1. 뉴스 수집 함수
 def get_breaking_news():
-    url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
+    # 현재 시각의 '분'을 확인
+    current_minute = datetime.datetime.now().minute
+    
+    # 시간에 따른 국가 설정 (00~19분: 한국, 20~39분: 미국, 40~59분: 중국)
+    if 0 <= current_minute < 20:
+        # 한국 뉴스 (언어: ko, 지역: KR)
+        url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
+        country_label = "KOREA"
+    elif 20 <= current_minute < 40:
+        # 미국 뉴스 (언어: en, 지역: US, 키워드: Breaking)
+        url = "https://news.google.com/rss/search?q=Breaking&hl=en-US&gl=US&ceid=US:en"
+        country_label = "USA"
+    else:
+        # 중국 뉴스 (언어: zh-CN, 지역: CN, 키워드: 突发新闻)
+        url = "https://news.google.com/rss/search?q=突发新闻&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
+        country_label = "CHINA"
+
+    print(f"현재 {current_minute}분: {country_label} 뉴스 수집 중...")
+
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "xml")
         items = soup.find_all("item")
         breaking_news = []
         for item in items[:100]:
-            title = item.title.text
-            link = item.link.text
-            if "속보" in title:
-                breaking_news.append({"title": title, "link": link})
-        return breaking_news
+            breaking_news.append({"title": item.title.text, "link": item.link.text})
+        return breaking_news, country_label # 국가 라벨도 함께 반환
     except Exception as e:
         print(f"수집 에러: {e}")
-        return []
+        return [], "ERROR"
 
 # 2. 뉴스 그룹화 (최소 3개 이상 필터링)
 def group_similar_news(news_list):
