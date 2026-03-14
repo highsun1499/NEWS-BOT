@@ -38,75 +38,48 @@ def group_similar_news(news_list):
     sorted_groups = sorted(groups.values(), key=len, reverse=True)
     return sorted_groups
 
-# 3. Gemini API 포스팅 생성 (요청하신 통합 요약 형식)
+# 3. Gemini API 포스팅 생성
 def generate_post(news_group):
     api_key = os.environ.get("GEMINI_API")
-    if not api_key: 
-        print("API 키가 설정되지 않았습니다.")
-        return None
-
+    if not api_key: return None
     try:
         client = genai.Client(api_key=api_key)
-        # 기사 정보를 텍스트로 정리
         context = "\n".join([f"- 제목: {n['title']} / 링크: {n['link']}" for n in news_group])
         today = datetime.now().strftime('%Y년 %m월 %d일')
-        
-        # 출력 형식을 고정하기 위한 매우 구체적인 프롬프트
         prompt = (
-            f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 아래의 [출력 형식]과 완전히 똑같이 한국어로 요약해.\n\n"
-            f"[출력 형식]:\n"
+            f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 아래 형식으로 한국어 요약해.\n\n"
             f"<h2>핵심 제목</h2>\n\n"
-            f"요약 문장들 (전체 내용을 통합하여 하나의 문단으로 작성하되, 문장 사이 적절한 띄어쓰기 유지)\n\n"
+            f"통합 요약 문장들 (한 문단으로)\n\n"
             f"링크 :\n"
-            f"1번 <a href='URL'>기사 제목 그대로</a>\n"
-            f"2번 <a href='URL'>기사 제목 그대로</a>\n"
-            f"3번 <a href='URL'>기사 제목 그대로</a>\n\n"
-            f"작성 규칙:\n"
-            f"1. 반드시 링크는 한 줄에 하나씩 작성해.\n"
-            f"2. '1번', '2번' 뒤에는 원본 기사의 제목을 그대로 적고 거기에 링크를 걸어.\n"
-            f"3. <html>이나 ```html 같은 마크다운 태그는 절대 쓰지 말고 순수 HTML만 출력해.\n\n"
+            f"1번 <a href='URL' target='_blank'>기사 제목</a>\n"
+            f"2번 <a href='URL' target='_blank'>기사 제목</a>\n\n"
             f"기사 데이터:\n{context}"
         )
-        
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview", 
-            contents=prompt
-        )
-        
-        result = response.text.replace("```html", "").replace("```", "").strip()
-        return result
-        
+        response = client.models.generate_content(model="gemini-3-flash-preview", contents=prompt)
+        return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
-        print(f"AI 에러 발생: {e}")
-        return None
+        print(f"AI 에러: {e}"); return None
 
-# 4. index.html 업데이트 (경로 문제 해결 핵심 부분)
+# 4. index.html 업데이트 (여기가 핵심 수정 부분입니다!)
 def update_index_html():
-    # news/ 폴더 내부의 파일 목록을 가져옵니다.
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
-    
-    if not post_files:
-        print("업데이트할 뉴스 파일이 없음.")
-        return
+    if not post_files: return
 
     links_html = ""
-    for file in post_files[:15]:
-        # 파일 경로에서 파일명만 추출 (예: post_2026...html)
+    for file in post_files[:10]: # 최근 20개 노출
         filename_only = os.path.basename(file)
-        
-        # 가독성을 위한 시간 표시 생성
         raw_name = filename_only.replace("post_", "").replace(".html", "")
         try:
             display_time = datetime.strptime(raw_name.split('_')[0] + raw_name.split('_')[1], "%Y%m%d%H%M%S").strftime("%m/%d %H:%M")
         except:
-            display_time = raw_name
+            display_time = "최근 속보"
 
-        # 중요: index.html에서 news 폴더 안의 파일을 가리키도록 경로를 './news/파일명'으로 설정
+        # 클릭 시 loadNews 함수를 실행하도록 수정
         links_html += f"""
-        <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition" onclick="loadNews('./news/{filename_only}')">
+        <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/{filename_only}')">
             <span class="text-blue-500 text-[10px] font-bold uppercase">Breaking</span>
-            <h2 class="text-sm font-bold mt-1 line-clamp-2">{display_time} - AI 요약 속보</h2>
-            <p class="text-xs text-gray-500 mt-1">클릭하여 내용 보기 &rarr;</p>
+            <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">{display_time} - AI 요약 속보</h2>
+            <p class="text-[11px] text-gray-400 mt-1">클릭하여 읽기 &rarr;</p>
         </div>
         """
 
@@ -115,55 +88,29 @@ def update_index_html():
             content = f.read()
 
         soup = BeautifulSoup(content, 'html.parser')
-        news_section = soup.find('section', id='news-list')
+        
+        # 새 index.html 구조의 사이드바 ID인 'news-list'를 찾습니다.
+        news_section = soup.find(id='news-list')
         
         if news_section:
-            news_section.clear()
-            # 새로운 링크 구조 주입
+            news_section.clear() # "뉴스를 불러오는 중..." 메시지 삭제
             new_content = BeautifulSoup(links_html, 'html.parser')
             news_section.append(new_content)
             
             with open("index.html", "w", encoding="utf-8") as f:
                 f.write(soup.prettify(formatter="html"))
-            print("index.html 업데이트 완료")
+            print("index.html 목록 업데이트 완료!")
 
-# 메인 실행부
 if __name__ == "__main__":
-    folder_name = "news"
-    if not os.path.exists(folder_name):
-        os.makedirs(folder_name)
-
+    if not os.path.exists("news"): os.makedirs("news")
     all_news = get_breaking_news()
     groups = group_similar_news(all_news)
-    
     if groups:
         for group in groups[:2]: 
             post = generate_post(group)
             if post:
                 now = datetime.now().strftime('%Y%m%d_%H%M%S')
-                filename = f"post_{now}_{groups.index(group)}.html"
-                file_path = os.path.join(folder_name, filename)
-                
+                file_path = f"news/post_{now}_{groups.index(group)}.html"
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(f"""
-                    <html>
-                    <head>
-                        <meta charset='utf-8'>
-                        <script src='[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)'></script>
-                        <style>
-                            body {{ line-height: 1.8; }}
-                            a {{ color: #2563eb; text-decoration: underline; }}
-                            h2 {{ font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem; }}
-                        </style>
-                    </head>
-                    <body class='p-10 lg:px-60'>
-                        <div style='white-space: pre-wrap;'>{post}</div>
-                        <br><br><hr><br>
-                        <a href='../index.html' style='font-weight: bold; text-decoration: none;'>← 목록으로 돌아가기</a>
-                    </body>
-                    </html>
-                    """)
-        
+                    f.write(f"<html><body style='line-height:1.8;'>{post}</body></html>")
         update_index_html()
-    else:
-        print("수집된 뉴스가 없습니다.")
