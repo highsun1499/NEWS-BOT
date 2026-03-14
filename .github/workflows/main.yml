@@ -5,23 +5,30 @@ on:
     - cron: '*/10 * * * *' # 10분마다 실행
   workflow_dispatch:
 
+# 깃허브 페이지에 글을 쓸 수 있는 권한을 명시적으로 부여합니다.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4 # 최신 v4 사용
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # 최신 v5 사용
         with:
-          python-version: '3.9'
+          python-version: '3.10' # 성능이 더 좋은 3.10 버전으로 상향
           
       - name: Install dependencies
         run: pip install -r requirements.txt
         
-      - name: Run Bot
+      - name: Run News Bot
         env:
           GEMINI_API: ${{ secrets.GEMINI_API }}
+          # 노드 버전 경고를 해결하기 위한 환경 변수 강제 설정
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
         run: python scraper.py
         
       - name: Push results
@@ -29,5 +36,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Auto-update news posts" || exit 0
-          git push
+          # 변경사항이 있을 때만 커밋 (에러 방지)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update news posts" && git push)
