@@ -14,7 +14,7 @@ def get_breaking_news():
         soup = BeautifulSoup(response.content, "xml")
         items = soup.find_all("item")
         breaking_news = []
-        for item in items[:50]:
+        for item in items[:100]:
             title = item.title.text
             link = item.link.text
             if "속보" in title:
