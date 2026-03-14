@@ -60,9 +60,13 @@ def generate_post(news_group):
 # 4. index.html 업데이트 (에러 방지 로직 보강)
 def update_index_html():
     post_files = sorted(glob.glob("post_*.html"), reverse=True)
-    links_html = ""
     
-    # 생성된 포스트 파일들을 리스트로 만듦
+    # 1. 만약 생성된 뉴스 파일이 하나도 없다면, 업데이트를 하지 않고 종료합니다.
+    if not post_files:
+        print("업데이트할 뉴스 파일이 없습니다. (API 제한 등의 사유)")
+        return
+
+    links_html = ""
     for file in post_files[:15]:
         display_name = file.replace("post_", "").replace(".html", "")
         links_html += f"""
@@ -77,23 +81,20 @@ def update_index_html():
         with open("index.html", "r", encoding="utf-8") as f:
             content = f.read()
 
-        # 1. BeautifulSoup을 사용하여 HTML 구조를 분석합니다. (주석 찾기 대신 사용)
         soup = BeautifulSoup(content, 'html.parser')
-        
-        # 2. 사용자님 index.html에 있는 <section id="news-list">를 정확히 타겟팅합니다.
         news_section = soup.find('section', id='news-list')
         
         if news_section:
-            # 3. 기존의 "뉴스를 수집 중입니다..." 같은 내용을 싹 비우고 새 뉴스를 넣습니다.
             news_section.clear()
-            news_section.append(BeautifulSoup(links_html, 'html.parser'))
+            # 2. 이번에는 append 대신 직접 HTML을 주입하여 IndexError를 원천 차단합니다.
+            new_content = BeautifulSoup(links_html, 'html.parser')
+            news_section.append(new_content)
             
-            # 4. 최종 결과 저장
             with open("index.html", "w", encoding="utf-8") as f:
-                f.write(str(soup))
-            print("index.html 업데이트 완료 (구조 분석 방식)")
+                f.write(soup.prettify(formatter="html"))
+            print("index.html 업데이트 완료")
         else:
-            print("에러: index.html에서 id='news-list'인 section을 찾을 수 없습니다.")
+            print("에러: index.html에서 id='news-list'를 찾을 수 없습니다.")
     else:
         print("에러: index.html 파일이 없습니다.")
         
