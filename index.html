@@ -1,1 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 실시간 속보 큐레이션</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-blue-600 p-4 text-white shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">🚀 Breaking News AI</h1>
+            <span class="text-sm">10분마다 자동 업데이트</span>
+        </div>
+    </nav>
 
+    <main class="container mx-auto mt-8 px-4">
+        <div class="bg-white p-4 mb-8 text-center border-dashed border-2 border-gray-300 text-gray-400">
+            광고 단위 (승인 후 여기에 코드 삽입)
+        </div>
+
+        <section id="news-list" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+                <span class="text-blue-500 text-xs font-bold uppercase">Breaking</span>
+                <h2 class="text-xl font-bold mt-2 mb-3">AI가 분석한 오늘의 핵심 속보입니다.</h2>
+                <p class="text-gray-600 text-sm mb-4">중복된 뉴스 3개를 분석하여 핵심 내용만 3줄로 요약했습니다...</p>
+                <a href="#" class="text-blue-600 font-semibold hover:underline">자세히 보기 &rarr;</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-20 p-10 bg-gray-800 text-gray-400 text-center">
+        <p>© 2024 AI News Curator. All rights reserved.</p>
+    </footer>
+</body>
+</html>
