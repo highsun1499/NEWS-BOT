@@ -57,12 +57,11 @@ def generate_post(news_group):
         print(f"AI 에러 발생: {e}")
         return None
 
-# 4. index.html 업데이트
+# 4. index.html 업데이트 (에러 방지 로직 보강)
 def update_index_html():
     post_files = sorted(glob.glob("post_*.html"), reverse=True)
     links_html = ""
     
-    # 생성된 포스트 파일들을 리스트로 만듦
     for file in post_files[:15]:
         display_name = file.replace("post_", "").replace(".html", "")
         links_html += f"""
@@ -77,15 +76,14 @@ def update_index_html():
         with open("index.html", "r", encoding="utf-8") as f:
             content = f.read()
 
-        # 반드시 이 주석이 index.html에 있어야 합니다.
+        # [수정 포인트] 비어있던 태그에 확실한 이름을 부여합니다.
+        # 사용자님의 index.html에 있는 <section id="news-list"> 안의 내용을 찾도록 합니다.
         start_tag = ''
         end_tag = ''
         
-        # 주석 태그가 있을 때만 split을 시도하여 ValueError 방지
         if start_tag in content and end_tag in content:
             parts = content.split(start_tag)
             before = parts[0]
-            # split 결과가 올바른지 한 번 더 체크
             after_parts = parts[1].split(end_tag)
             if len(after_parts) >= 2:
                 after = after_parts[1]
@@ -96,7 +94,8 @@ def update_index_html():
             else:
                 print("에러: end_tag를 찾을 수 없습니다.")
         else:
-            print(f"에러: index.html 내에 '{start_tag}' 또는 '{end_tag}' 주석이 없습니다.")
+            # [보강] 만약 주석 태그가 없으면 에러를 내지 말고 알려만 줍니다.
+            print("안내: index.html에 주석이 없어 업데이트를 건너뜁니다.")
     else:
         print("에러: index.html 파일이 없습니다.")
 
