@@ -5,37 +5,48 @@ from bs4 import BeautifulSoup
 from google import genai
 from datetime import datetime
 
-# 1. 뉴스 수집 함수
+# 1. 뉴스 수집 함수 (최신순 정렬 보강)
 def get_breaking_news():
-    # 구글 뉴스 '속보' 검색 RSS 피드
+    # '속보' 키워드 검색 + 최신순 정렬 파라미터 추가
     url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
     
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "xml") # RSS는 XML 형식입니다
-    items = soup.find_all("item")
-    
-    breaking_news = []
-    for item in items[:100]: # 최신 100개 확인
-        title = item.title.text
-        link = item.link.text
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "xml")
+        items = soup.find_all("item")
         
-        # 제목에 진짜 '속보'라는 단어가 들어간 것만 필터링
-        if "[속보]" in title or "속보" in title:
-            breaking_news.append({"title": title, "link": link})
+        breaking_news = []
+        for item in items[:10]: # 너무 많으면 처리가 느려지니 100개로 조절
+            title = item.title.text
+            link = item.link.text
             
-    return breaking_news
+            # 제목에서 '[속보]', '속보' 등을 포함한 것만 필터링
+            if "속보" in title:
+                breaking_news.append({"title": title, "link": link})
+        
+        return breaking_news
+    except Exception as e:
+        print(f"수집 에러: {e}")
+        return []
 
-# 2. 뉴스 그룹화
+# 2. 뉴스 그룹화 (첫 단어가 '속보'인 경우를 대비해 개선)
 def group_similar_news(news_list):
     groups = {}
     for news in news_list:
-        words = news['title'].split()
+        # 제목에서 '속보', '[속보]', 'Breaking' 등 무의미한 첫 단어 제거 후 그룹화 키 추출
+        clean_title = news['title'].replace("[속보]", "").replace("속보", "").strip()
+        words = clean_title.split()
+        
         if len(words) > 0:
-            group_key = words[0]
+            # 첫 세 단어를 조합해서 좀 더 정확하게 그룹화
+            group_key = " ".join(words[:3]) 
             if group_key not in groups:
                 groups[group_key] = []
             groups[group_key].append(news)
-    return [items for items in groups.values() if len(items) >= 1]
+            
+    # 그룹 내 뉴스가 많은 순서(중요도)로 정렬해서 반환
+    sorted_groups = sorted(groups.values(), key=len, reverse=True)
+    return sorted_groups
 
 # 3. Gemini API 포스팅 생성
 def generate_post(news_group):
