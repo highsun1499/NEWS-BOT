@@ -1,36 +1,140 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 속보 큐레이터</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* 좌측 목록 스크롤바 숨기기 */
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   AI 속보 큐레이터
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <style>
+   /* 좌측 목록 스크롤바 숨기기 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
-</head>
-<body class="bg-gray-100 h-screen flex flex-col">
-
-    <header class="bg-white shadow-sm p-4 z-10">
-        <h1 class="text-2xl font-bold text-blue-600 text-center cursor-pointer" onclick="location.reload()">AI Breaking News</h1>
-    </header>
-
-    <div class="flex flex-1 overflow-hidden">
-        <aside class="w-1/3 lg:w-1/4 bg-white border-r overflow-y-auto no-scrollbar" id="news-list">
-            <div class="p-10 text-center text-gray-500">뉴스를 불러오는 중...</div>
-        </aside>
-
-        <main class="flex-1 bg-gray-50 overflow-y-auto p-6 lg:p-12" id="content-area">
-            <div class="h-full flex flex-col items-center justify-center text-gray-400">
-                <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2zM14 2v4h4"></path></svg>
-                <p class="text-xl">왼쪽 목록에서 뉴스를 선택해 주세요.</p>
-            </div>
-        </main>
+  </style>
+ </head>
+ <body class="bg-gray-100 h-screen flex flex-col">
+  <header class="bg-white shadow-sm p-4 z-10">
+   <h1 class="text-2xl font-bold text-blue-600 text-center cursor-pointer" onclick="location.reload()">
+    AI Breaking News
+   </h1>
+  </header>
+  <div class="flex flex-1 overflow-hidden">
+   <aside class="w-1/3 lg:w-1/4 bg-white border-r overflow-y-auto no-scrollbar" id="news-list">
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152701_1.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 15:27 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
     </div>
-
-    <script>
-        // 화면 이동 없이 내용을 바꿔치기하는 함수
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152648_0.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 15:26 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152035_1.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 15:20 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152022_0.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 15:20 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_143435_1.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 14:34 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_143420_0.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 14:34 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141705_2.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 14:17 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141655_1.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 14:16 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141642_0.html')">
+     <span class="text-blue-500 text-[10px] font-bold uppercase">
+      Breaking
+     </span>
+     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+      03/14 14:16 - AI 요약 속보
+     </h2>
+     <p class="text-[11px] text-gray-400 mt-1">
+      클릭하여 읽기 &rarr;
+     </p>
+    </div>
+   </aside>
+   <main class="flex-1 bg-gray-50 overflow-y-auto p-6 lg:p-12" id="content-area">
+    <div class="h-full flex flex-col items-center justify-center text-gray-400">
+     <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+      <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2zM14 2v4h4">
+      </path>
+     </svg>
+     <p class="text-xl">
+      왼쪽 목록에서 뉴스를 선택해 주세요.
+     </p>
+    </div>
+   </main>
+  </div>
+  <script>
+   // 화면 이동 없이 내용을 바꿔치기하는 함수
         async function loadNews(url) {
             const contentArea = document.getElementById('content-area');
             contentArea.innerHTML = '<div class="text-center mt-20 text-blue-500 font-bold">기사를 불러오는 중...</div>';
@@ -55,6 +159,6 @@
                 contentArea.innerHTML = '<div class="text-red-500 text-center mt-20">기사를 불러오지 못했습니다.</div>';
             }
         }
-    </script>
-</body>
+  </script>
+ </body>
 </html>
