@@ -7,21 +7,23 @@ from datetime import datetime
 
 # 1. 뉴스 수집 함수
 def get_breaking_news():
+    # 구글 뉴스 '속보' 검색 RSS 피드
     url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
-    try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.content, 'xml')
-        news_items = []
-        for item in soup.find_all('item')[:100]:
-            news_items.append({
-                "title": item.title.text,
-                "link": item.link.text,
-                "pubDate": item.pubDate.text
-            })
-        return news_items
-    except Exception as e:
-        print(f"뉴스 수집 에러: {e}")
-        return []
+    
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "xml") # RSS는 XML 형식입니다
+    items = soup.find_all("item")
+    
+    breaking_news = []
+    for item in items[:100]: # 최신 10개 확인
+        title = item.title.text
+        link = item.link.text
+        
+        # 제목에 진짜 '속보'라는 단어가 들어간 것만 필터링
+        if "[속보]" in title or "속보" in title:
+            breaking_news.append({"title": title, "link": link})
+            
+    return breaking_news
 
 # 2. 뉴스 그룹화
 def group_similar_news(news_list):
