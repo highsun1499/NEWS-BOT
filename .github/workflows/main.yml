@@ -2,10 +2,13 @@ name: News-Bot-Automation
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # 10분마다 실행
+    - cron: '0 * * * *' # 60분마다 실행
   workflow_dispatch:
 
-# 깃허브 페이지에 글을 쓸 수 있는 권한을 명시적으로 부여합니다.
+# 여기에 전역 변수로 배치하면 모든 단계의 노드 경고가 사라집니다.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write
 
@@ -14,12 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4 # 최신 v4 사용
+        uses: actions/checkout@v4 
       
       - name: Set up Python
-        uses: actions/setup-python@v5 # 최신 v5 사용
+        uses: actions/setup-python@v5 
         with:
-          python-version: '3.10' # 성능이 더 좋은 3.10 버전으로 상향
+          python-version: '3.10'
           
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -27,8 +30,6 @@ jobs:
       - name: Run News Bot
         env:
           GEMINI_API: ${{ secrets.GEMINI_API }}
-          # 노드 버전 경고를 해결하기 위한 환경 변수 강제 설정
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
         run: python scraper.py
         
       - name: Push results
@@ -36,5 +37,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          # 변경사항이 있을 때만 커밋 (에러 방지)
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update news posts" && git push)
