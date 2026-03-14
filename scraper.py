@@ -45,15 +45,26 @@ def generate_post(news_group):
     try:
         client = genai.Client(api_key=api_key)
         context = "\n".join([f"- 제목: {n['title']} / 링크: {n['link']}" for n in news_group])
-        prompt = f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 HTML 형식으로 제목(h2), 3줄 요약(ul/li), 참조링크를 작성해줘. <html>태그는 쓰지마:\n{context}"
+        
+        # 프롬프트 수정: 가독성을 위한 스타일 지시 추가
+        prompt = (
+            f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 한국어로 요약해줘.\n"
+            f"형식: 각 뉴스마다 <h2>제목</h2>, <ul>내용 3줄 요약</ul>, 참조링크 순서로 작성해.\n"
+            f"중요: 각 뉴스 아이템 사이에는 반드시 <br><br>를 넣어 간격을 넓혀줘.\n"
+            f"<ul> 태그 안의 <li> 문장들 사이에도 줄간격이 느껴지도록 작성해.\n"
+            f"<html>이나 ```html 같은 마크다운 태그는 절대 쓰지 말고 순수 HTML 내용만 출력해:\n{context}"
+        )
         
         response = client.models.generate_content(
             model="gemini-3-flash-preview", 
             contents=prompt
         )
-        return response.text
+        
+        # AI가 간혹 앞뒤에 붙이는 ```html 또는 ``` 문구 제거
+        result = response.text.replace("```html", "").replace("```", "").strip()
+        return result
+        
     except Exception as e:
-        # 할당량 초과(429) 등의 에러가 발생하면 여기서 출력됩니다.
         print(f"AI 에러 발생: {e}")
         return None
 
