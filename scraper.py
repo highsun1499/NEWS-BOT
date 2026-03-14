@@ -35,7 +35,7 @@ def group_similar_news(news_list):
             groups[group_key].append(news)
     return [items for items in groups.values() if len(items) >= 1]
 
-# 3. Gemini API 포스팅 생성 (최신 SDK 버전)
+# 3. Gemini API 포스팅 생성
 def generate_post(news_group):
     api_key = os.environ.get("GEMINI_API")
     if not api_key: return None
@@ -46,7 +46,7 @@ def generate_post(news_group):
         prompt = f"너는 뉴스 큐레이터야. 다음 기사들을 읽고 HTML 형식으로 제목(h2), 3줄 요약(ul/li), 참조링크를 작성해줘. <html>태그는 쓰지마:\n{context}"
         
         response = client.models.generate_content(
-            model="gemini-3-flash", # 최신 모델로 변경
+            model="gemini-2.0-flash", # API에서 인식 가능한 안정적인 모델명으로 고정
             contents=prompt
         )
         return response.text
@@ -73,10 +73,10 @@ def update_index_html():
         with open("index.html", "r", encoding="utf-8") as f:
             content = f.read()
 
+        # [수정 포인트] 빈 문자열이었던 태그를 명확하게 지정
         start_tag = ''
         end_tag = ''
         
-        # 태그가 있는지 확인 후 업데이트
         if start_tag in content and end_tag in content:
             parts = content.split(start_tag)
             before = parts[0]
@@ -86,7 +86,8 @@ def update_index_html():
                 f.write(new_content)
             print("index.html 업데이트 완료")
         else:
-            print("에러: index.html 내에 NEWS_START/END 주석이 없습니다.")
+            # 태그가 없을 때 에러를 출력하여 ValueError를 방지함
+            print(f"에러: index.html 내에 {start_tag} 또는 {end_tag} 주석이 없습니다.")
 
 if __name__ == "__main__":
     print("작업 시작...")
