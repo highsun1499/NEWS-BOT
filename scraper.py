@@ -58,7 +58,7 @@ def generate_post(news_group, country):
             f"1번 <a href='URL' target='_blank'>기사 제목</a><br>\n"
         )
         # 안정적인 모델명으로 변경
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+        response = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=prompt)
         return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
         print(f"AI 에러: {e}"); return None
