@@ -74,40 +74,47 @@ def generate_post(news_group, country):
 
 # 4. index.html 업데이트 (에러 방지 로직 강화)
 def update_index_html():
+    # news 폴더 안의 모든 html 파일을 가져옴
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
-    for file in post_files[:25]:
+    
+    # 상위 100개만 목록에 표시
+    for file in post_files[:100]:
         filename = os.path.basename(file)
+        # '_'로 나눠서 정보 추출 (예: post, 110050, CHINA, 0.html)
         parts = filename.replace(".html", "").split('_')
         
-        # 기본값 설정
         country_label = "NEWS"
         time_label = "최신"
 
-        try:
-            # 파일명 형식: post_시간_국가_번호.html (예: post_154439_CHINA_0.html)
-            if len(parts) >= 3:
-                time_label = f"{parts[1][:2]}:{parts[1][2:4]}" # '154439' -> '15:44'
-                country_label = parts[2]
-        except:
-            pass
+        if len(parts) >= 3:
+            # 110050 -> 11:00 형식으로 변환
+            raw_time = parts[1]
+            time_label = f"{raw_time[:2]}:{raw_time[2:4]}"
+            country_label = parts[2] # CHINA
 
         links_html += f"""
         <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
             <span class="text-blue-500 text-[10px] font-bold uppercase">{country_label}</span>
-            <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">{time_label} - 속보 요약</h2>
+            <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">{time_label} - AI 요약 속보</h2>
         </div>
         """
     
+    # index.html 파일 읽어서 news-list 부분만 교체
     if os.path.exists("index.html"):
         with open("index.html", "r", encoding="utf-8") as f:
-            soup = BeautifulSoup(f.read(), 'html.parser')
-        section = soup.find(id='news-list')
-        if section:
-            section.clear()
-            section.append(BeautifulSoup(links_html, 'html.parser'))
+            content = f.read()
+            soup = BeautifulSoup(content, 'html.parser')
+            
+        target_list = soup.find(id='news-list')
+        if target_list:
+            target_list.clear()
+            target_list.append(BeautifulSoup(links_html, 'html.parser'))
+            
             with open("index.html", "w", encoding="utf-8") as f:
-                f.write(soup.prettify(formatter="html"))
+                # prettify를 쓰면 구조가 깨질 수 있으니 문자열로 저장하는 것이 안전할 수 있습니다.
+                f.write(str(soup))
+            print("index.html 갱신 완료!")
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
