@@ -8,18 +8,27 @@ import time
 
 # 1. 뉴스 수집 (국가별)
 def get_global_news():
-    current_minute = datetime.now().minute
-    if 0 <= current_minute < 20:
+    # 현재 '시(Hour)'를 가져옵니다. (0~23)
+    current_hour = datetime.now().hour
+    
+    # 시간에 따른 사이클 설정 (시간 % 3)
+    # 0, 3, 6, 9...시 : 한국
+    # 1, 4, 7, 10...시 : 미국
+    # 2, 5, 8, 11...시 : 중국
+    cycle = current_hour % 3
+    
+    if cycle == 0:
         url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
         country = "KOREA"
-    elif 20 <= current_minute < 40:
-        url = "https://news.google.com/rss/search?q=Breaking+News&hl=en-US&gl=US&ceid=US:en"
+    elif cycle == 1:
+        url = "https://news.google.com/rss/search?q=Breaking&hl=en-US&gl=US&ceid=US:en"
         country = "USA"
     else:
         url = "https://news.google.com/rss/search?q=突发新闻&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
         country = "CHINA"
 
-    print(f"[{datetime.now().strftime('%H:%M')}] {country} 뉴스 수집 중...")
+    print(f"[{current_hour}시 정기 업데이트] {country} 뉴스 수집 시작...")
+    
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "xml")
