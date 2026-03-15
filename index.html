@@ -1,14 +1,15 @@
 <!DOCTYPE html>
+
 <html lang="ko">
- <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>
    AI 속보 큐레이터
   </title>
-  <script src="https://cdn.tailwindcss.com">
-  </script>
-  <style>
+<script src="https://cdn.tailwindcss.com">
+</script>
+<style>
    .no-scrollbar::-webkit-scrollbar { display: none; }
 
     /* 구글 번역 툴바 및 요소들 원천 봉쇄 */
@@ -39,196 +40,128 @@
         display: none !important;
     }
   </style>
- </head>
- <body class="bg-gray-100 h-screen flex flex-col">
-  <header class="bg-white shadow-sm p-4 z-10 flex justify-between items-center px-8">
-   <h1 class="text-2xl font-bold text-blue-600 cursor-pointer" onclick="location.reload()">
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+<header class="bg-white shadow-sm p-4 z-10 flex justify-between items-center px-8">
+<h1 class="text-2xl font-bold text-blue-600 cursor-pointer" onclick="location.reload()">
     AI Breaking News
    </h1>
-   <div class="flex space-x-4 text-sm font-medium">
-    <button class="hover:text-blue-600" onclick="translatePage('ko')">
+<div class="flex space-x-4 text-sm font-medium">
+<button class="hover:text-blue-600" onclick="translatePage('ko')">
      한국어
     </button>
-    <span class="text-gray-300">
+<span class="text-gray-300">
      |
     </span>
-    <button class="hover:text-blue-600" onclick="translatePage('en')">
+<button class="hover:text-blue-600" onclick="translatePage('en')">
      English
     </button>
-    <span class="text-gray-300">
+<span class="text-gray-300">
      |
     </span>
-    <button class="hover:text-blue-600" onclick="translatePage('zh-CN')">
+<button class="hover:text-blue-600" onclick="translatePage('zh-CN')">
      中文
     </button>
-   </div>
-  </header>
-  <div class="flex flex-1 overflow-hidden">
-   <aside class="w-1/3 lg:w-1/4 bg-white border-r overflow-y-auto no-scrollbar" id="news-list">
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_155456_2.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      155456
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_155442_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      155442
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_155429_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      155429
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_153829_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      153829
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_153822_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      153822
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152701_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      152701
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152648_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      152648
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152035_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      152035
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152022_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      152022
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_143435_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      143435
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_143420_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      143420
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141705_2.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      141705
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141655_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      141655
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141642_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      141642
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      20:26 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_110050_CHINA_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      CHINA
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      11:00 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_090641_KOREA_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      KOREA
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      09:06 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_090638_KOREA_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      KOREA
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      09:06 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_073426_USA_1.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      USA
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      07:34 - 속보 요약
-     </h2>
-    </div>
-    <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_073423_USA_0.html')">
-     <span class="text-blue-500 text-[10px] font-bold uppercase">
-      USA
-     </span>
-     <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-      07:34 - 속보 요약
-     </h2>
-    </div>
-   </aside>
-   <main class="flex-1 bg-gray-50 overflow-y-auto p-6 lg:p-12" id="content-area">
-    <div class="h-full flex flex-col items-center justify-center text-gray-400">
-     <p class="text-xl">
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<aside class="w-1/3 lg:w-1/4 bg-white border-r overflow-y-auto no-scrollbar" id="news-list">
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_155456_2.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">155456</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_155442_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">155442</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_155429_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">155429</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_153829_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">153829</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_153822_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">153822</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152701_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">152701</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152648_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">152648</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152035_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">152035</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_152022_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">152022</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_143435_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">143435</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_143420_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">143420</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141705_2.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">141705</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141655_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">141655</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260314_141642_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">141642</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">20:26 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_135953_USA_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">13:59 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_135950_USA_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">13:59 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_110050_CHINA_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">CHINA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">11:00 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_090641_KOREA_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">09:06 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_090638_KOREA_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">09:06 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_073426_USA_1.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">07:34 - AI 요약 속보</h2>
+</div>
+<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_073423_USA_0.html')">
+<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
+<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">07:34 - AI 요약 속보</h2>
+</div>
+</aside>
+<main class="flex-1 bg-gray-50 overflow-y-auto p-6 lg:p-12" id="content-area">
+<div class="h-full flex flex-col items-center justify-center text-gray-400">
+<p class="text-xl">
       왼쪽 목록에서 뉴스를 선택해 주세요.
      </p>
-    </div>
-   </main>
-  </div>
-  <div id="google_translate_element">
-  </div>
-  <script type="text/javascript">
+</div>
+</main>
+</div>
+<div id="google_translate_element">
+</div>
+<script type="text/javascript">
    function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'ko',
@@ -254,9 +187,9 @@
        }
    }
   </script>
-  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript">
-  </script>
-  <script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript">
+</script>
+<script>
    async function loadNews(url) {
             const contentArea = document.getElementById('content-area');
             contentArea.innerHTML = '<div class="text-center mt-20 text-blue-500 font-bold">Loading...</div>';
@@ -271,5 +204,5 @@
             }
         }
   </script>
- </body>
+</body>
 </html>
