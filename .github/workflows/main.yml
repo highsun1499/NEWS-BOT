@@ -2,7 +2,8 @@ name: News-Bot-Automation
 
 on:
   schedule:
-    - cron: '0,20,40 * * * *'
+    # 매시간 정각에 실행
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 # 여기에 전역 변수로 배치하면 모든 단계의 노드 경고가 사라집니다.
