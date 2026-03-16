@@ -59,12 +59,16 @@ def generate_post(news_group, country):
         context = "\n".join([f"{i+1}. {n['title']} ({n['link']})" for i, n in enumerate(news_group)])
         
         prompt = (
-            f"너는 글로벌 뉴스 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
-            f"제공된 기사들을 한국어로 요약해. 형식은 반드시 순수 HTML로만 출력해.\n"
-            f"<h2>[{country} 속보] 핵심 제목</h2><br>\n"
-            f"요약 문단 (문장 끝마다 <br> 필수)<br>\n"
+            f"너는 글로벌 뉴스 전문 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
+            f"다음 기사들이 해당 국가의 언어라면 한국어로 먼저 번역해.\n"
+            f"그 후 아래 형식을 엄격히 지켜서 요약해.\n\n"
+            f"<h2>[{country} 속보] 핵심 제목</h2>\n<br>\n"
+            f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
             f"<strong>링크 :</strong><br>\n"
             f"1번 <a href='URL' target='_blank'>기사 제목</a><br>\n"
+            f"2번 <a href='URL' target='_blank'>기사 제목</a><br>\n"
+            f"3번 <a href='URL' target='_blank'>기사 제목</a><br>\n\n"
+            f"순수 HTML만 출력해."
         )
         # 안정적인 모델명으로 변경
         response = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=prompt)
