@@ -78,29 +78,47 @@ def generate_post(news_group, country):
 
 # 4. index.html 업데이트 (에러 방지 로직 강화)
 def update_index_html():
-    # news 폴더 안의 모든 html 파일을 가져옴
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     
-    # 상위 100개만 목록에 표시
-    for file in post_files[:100]:
+    for file in post_files[:100]: # 요청하신 대로 100개 정도 표시
         filename = os.path.basename(file)
-        # '_'로 나눠서 정보 추출 (예: post, 110050, CHINA, 0.html)
         parts = filename.replace(".html", "").split('_')
         
-        country_label = "NEWS"
+        # 기본값
+        date_label = ""
         time_label = "최신"
+        country_label = "NEWS"
 
-        if len(parts) >= 3:
-            # 110050 -> 11:00 형식으로 변환
-            raw_time = parts[1]
-            time_label = f"{raw_time[:2]}:{raw_time[2:4]}"
-            country_label = parts[2] # CHINA
+        try:
+            # 새로운 형식: post(0), 날짜(1), 시간(2), 국가(3), 번호(4)
+            if len(parts) >= 4:
+                date_val = parts[1] # 20260317
+                time_val = parts[2] # 230050
+                country_label = parts[3]
+                
+                # '03/17' 형식으로 날짜 생성
+                date_label = f"{date_val[4:6]}/{date_val[6:8]}" 
+                # '23:00' 형식으로 시간 생성
+                time_label = f"{time_val[:2]}:{time_val[2:4]}"
+            
+            # 구버전 형식 처리 (지연 실행 대비)
+            elif len(parts) == 3:
+                time_val = parts[1]
+                country_label = parts[2]
+                time_label = f"{time_val[:2]}:{time_val[2:4]}"
+        except:
+            pass
 
         links_html += f"""
         <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
-            <span class="text-blue-500 text-[10px] font-bold uppercase">{country_label}</span>
-            <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">{time_label} - AI 요약 속보</h2>
+            <div class="flex justify-between items-start">
+                <span class="text-blue-500 text-[10px] font-bold uppercase">{country_label}</span>
+                <span class="text-gray-400 text-[10px]">{date_label}</span>
+            </div>
+            <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
+                {time_label} - AI 요약 속보
+            </h2>
         </div>
         """
     
