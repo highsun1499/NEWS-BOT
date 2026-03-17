@@ -126,14 +126,18 @@ if __name__ == "__main__":
     groups = group_similar_news(news_list)
     
     if groups:
+        # 날짜와 시간을 가져옵니다.
+        now = datetime.now()
+        date_str = now.strftime('%Y%m%d') # 20260317
+        time_str = now.strftime('%H%M%S') # 230050
+        
         for i, group in enumerate(groups[:2]):
             post_content = generate_post(group, country_code)
             if post_content:
-                now_time = datetime.now().strftime('%H%M%S')
-                file_path = f"news/post_{now_time}_{country_code}_{i}.html"
+                # 파일명 규칙: post_날짜_시간_국가_번호.html
+                file_path = f"news/post_{date_str}_{time_str}_{country_code}_{i}.html"
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
                 time.sleep(1)
     
-    # 기사가 새로 생성되지 않더라도 목록은 항상 갱신
     update_index_html()
