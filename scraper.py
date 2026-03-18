@@ -81,33 +81,37 @@ def update_index_html():
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     
-    for file in post_files[:100]: # 요청하신 대로 100개 정도 표시
+    for file in post_files[:100]:
         filename = os.path.basename(file)
+        # .html 제거 후 _로 분리
         parts = filename.replace(".html", "").split('_')
         
-        # 기본값
         date_label = ""
-        time_label = "최신"
+        time_label = "시간미상"
         country_label = "NEWS"
 
         try:
-            # 새로운 형식: post(0), 날짜(1), 시간(2), 국가(3), 번호(4)
-            if len(parts) >= 4:
-                date_val = parts[1] # 20260317
-                time_val = parts[2] # 230050
-                country_label = parts[3]
+            # 1. 신규 형식 체크 (post, 날짜, 시간, 국가, 번호) -> 총 5개 요소
+            if len(parts) >= 5:
+                date_val = parts[1]    # 20260318
+                time_val = parts[2]    # 170010
+                country_label = parts[3] # CHINA
                 
-                # '03/17' 형식으로 날짜 생성
                 date_label = f"{date_val[4:6]}/{date_val[6:8]}" 
-                # '23:00' 형식으로 시간 생성
                 time_label = f"{time_val[:2]}:{time_val[2:4]}"
             
-            # 구버전 형식 처리 (지연 실행 대비)
+            # 2. 과도기 형식 체크 (post, 시간, 국가) -> 총 3개 요소
             elif len(parts) == 3:
                 time_val = parts[1]
                 country_label = parts[2]
                 time_label = f"{time_val[:2]}:{time_val[2:4]}"
-        except:
+                
+            # 3. 만약 CHINA가 시간 자리에 왔을 경우 방어 로직
+            if not time_label.replace(":", "").isdigit():
+                time_label = "확인중"
+
+        except Exception as e:
+            print(f"파일명 파싱 에러 ({filename}): {e}")
             pass
 
         links_html += f"""
@@ -122,19 +126,15 @@ def update_index_html():
         </div>
         """
     
-    # index.html 파일 읽어서 news-list 부분만 교체
+    # index.html 업데이트 로직 (이하 동일)
     if os.path.exists("index.html"):
         with open("index.html", "r", encoding="utf-8") as f:
-            content = f.read()
-            soup = BeautifulSoup(content, 'html.parser')
-            
+            soup = BeautifulSoup(f.read(), 'html.parser')
         target_list = soup.find(id='news-list')
         if target_list:
             target_list.clear()
             target_list.append(BeautifulSoup(links_html, 'html.parser'))
-            
             with open("index.html", "w", encoding="utf-8") as f:
-                # prettify를 쓰면 구조가 깨질 수 있으니 문자열로 저장하는 것이 안전할 수 있습니다.
                 f.write(str(soup))
             print("index.html 갱신 완료!")
 
