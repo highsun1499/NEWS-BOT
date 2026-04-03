@@ -50,18 +50,25 @@ def group_similar_news(news_list):
             groups[group_key].append(news)
     return sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
 
-# 3. Gemini 포스팅 생성 (모델명 수정: gemini-2.0-flash)
+# 3. Gemini 포스팅 생성 (수정 완료)
 def generate_post(news_group, country):
     api_key = os.environ.get("GEMINI_API")
     if not api_key: return None
     try:
         client = genai.Client(api_key=api_key)
+        
+        # 기사 목록 문자열 생성
         context = "\n".join([f"{i+1}. {n['title']} ({n['link']})" for i, n in enumerate(news_group)])
         
+        # [핵심 수정 부분] prompt 안에 context(기사 목록)를 포함시켜야 합니다.
         prompt = (
             f"너는 글로벌 뉴스 전문 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
             f"다음 기사들이 해당 국가의 언어라면 한국어로 먼저 번역해.\n"
             f"그 후 아래 형식을 엄격히 지켜서 요약해.\n\n"
+            f"========= [분석할 기사 목록] =========\n"
+            f"{context}\n"
+            f"======================================\n\n"
+            f"[출력 형식]\n"
             f"<h2>[{country} 속보] 핵심 제목</h2>\n<br>\n"
             f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
             f"<strong>링크 :</strong><br>\n"
@@ -70,20 +77,20 @@ def generate_post(news_group, country):
             f"3번 <a href='URL' target='_blank'>기사 제목</a><br>\n\n"
             f"순수 HTML만 출력해."
         )
-        # 안정적인 모델명으로 변경
-        response = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=prompt)
+        
+        # 안정적인 모델명 사용 (gemini-2.0-flash 추천)
+        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
         print(f"AI 에러: {e}"); return None
 
-# 4. index.html 업데이트 (에러 방지 로직 강화)
+# 4. index.html 업데이트
 def update_index_html():
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     
     for file in post_files[:100]:
         filename = os.path.basename(file)
-        # .html 제거 후 _로 분리
         parts = filename.replace(".html", "").split('_')
         
         date_label = ""
@@ -91,22 +98,18 @@ def update_index_html():
         country_label = "NEWS"
 
         try:
-            # 1. 신규 형식 체크 (post, 날짜, 시간, 국가, 번호) -> 총 5개 요소
             if len(parts) >= 5:
-                date_val = parts[1]    # 20260318
-                time_val = parts[2]    # 170010
-                country_label = parts[3] # CHINA
+                date_val = parts[1]    
+                time_val = parts[2]    
+                country_label = parts[3] 
                 
                 date_label = f"{date_val[4:6]}/{date_val[6:8]}" 
                 time_label = f"{time_val[:2]}:{time_val[2:4]}"
-            
-            # 2. 과도기 형식 체크 (post, 시간, 국가) -> 총 3개 요소
             elif len(parts) == 3:
                 time_val = parts[1]
                 country_label = parts[2]
                 time_label = f"{time_val[:2]}:{time_val[2:4]}"
                 
-            # 3. 만약 CHINA가 시간 자리에 왔을 경우 방어 로직
             if not time_label.replace(":", "").isdigit():
                 time_label = "확인중"
 
@@ -126,7 +129,6 @@ def update_index_html():
         </div>
         """
     
-    # index.html 업데이트 로직 (이하 동일)
     if os.path.exists("index.html"):
         with open("index.html", "r", encoding="utf-8") as f:
             soup = BeautifulSoup(f.read(), 'html.parser')
@@ -144,15 +146,13 @@ if __name__ == "__main__":
     groups = group_similar_news(news_list)
     
     if groups:
-        # 날짜와 시간을 가져옵니다.
         now = datetime.now()
-        date_str = now.strftime('%Y%m%d') # 20260317
-        time_str = now.strftime('%H%M%S') # 230050
+        date_str = now.strftime('%Y%m%d')
+        time_str = now.strftime('%H%M%S')
         
         for i, group in enumerate(groups[:2]):
             post_content = generate_post(group, country_code)
             if post_content:
-                # 파일명 규칙: post_날짜_시간_국가_번호.html
                 file_path = f"news/post_{date_str}_{time_str}_{country_code}_{i}.html"
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
