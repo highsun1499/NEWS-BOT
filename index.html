@@ -4,34 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>글로벌 뉴스 AI 큐레이터</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
 
-    <!-- Header -->
     <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2 rounded-lg">
-                <i data-lucide="globe" class="w-6 h-6 text-white"></i>
-            </div>
+            <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="globe" class="w-6 h-6 text-white"></i></div>
             <div>
-                <h1 class="text-xl font-bold text-gray-900 leading-tight">글로벌 뉴스 AI 큐레이터</h1>
-                <p class="text-xs text-gray-500 font-medium flex items-center mt-0.5">
-                    <i data-lucide="bot" class="w-3 h-3 mr-1"></i>
-                    Powered by Gemini 2.0 Flash
+                <h1 class="text-xl font-bold text-gray-900">글로벌 뉴스 AI 큐레이터</h1>
+                <p class="text-xs text-gray-500 flex items-center mt-0.5">
+                    <i data-lucide="bot" class="w-3 h-3 mr-1"></i> Powered by Gemini 2.0 Flash
                 </p>
             </div>
         </div>
@@ -45,117 +34,70 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-6 bg-white rounded-xl shadow-sm border border-gray-200 h-[800px]">
-        
-        <!-- Sidebar -->
+        <!-- Python이 이 안에 내용을 채웁니다 -->
         <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full overflow-hidden bg-gray-50/50">
             <div class="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
                 <h2 class="font-bold text-gray-800 flex items-center">
-                    <i data-lucide="newspaper" class="w-4 h-4 mr-2 text-blue-500"></i>
-                    최신 요약 속보
+                    <i data-lucide="newspaper" class="w-4 h-4 mr-2 text-blue-500"></i> 최신 요약 속보
                 </h2>
-                <span id="news-count" class="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-1 rounded-md">3건</span>
             </div>
-            
-            <div id="news-list" class="overflow-y-auto flex-1 flex flex-col">
-                <!-- 뉴스 리스트가 자바스크립트로 삽입됩니다 -->
+            <div id="news-list" class="overflow-y-auto flex-1">
+                <!-- Python update_index_html()에 의해 기사 리스트가 생성될 자리 -->
+                <p class="p-10 text-center text-gray-400 text-sm">뉴스를 불러오는 중...</p>
             </div>
         </aside>
 
-        <!-- Content Area -->
         <section id="content-area" class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
             <div class="p-6 md:p-10 overflow-y-auto h-full">
-                <div id="article-body" class="max-w-3xl mx-auto">
-                    <!-- 뉴스 본문이 자바스크립트로 삽입됩니다 -->
+                <div id="article-body" class="max-w-3xl mx-auto prose prose-blue">
+                    <div class="flex flex-col items-center justify-center h-[500px] text-gray-400">
+                        <i data-lucide="zap" class="w-12 h-12 mb-4 text-gray-200"></i>
+                        <p>좌측 리스트에서 뉴스를 선택하세요.</p>
+                    </div>
                 </div>
                 
-                <div class="max-w-3xl mx-auto mt-12 p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start">
+                <div id="disclaimer" class="max-w-3xl mx-auto mt-12 p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start hidden">
                     <i data-lucide="alert-circle" class="w-5 h-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0"></i>
-                    <p class="text-sm text-gray-500 leading-relaxed">
-                        이 콘텐츠는 Gemini AI를 통해 자동으로 수집, 번역 및 요약되었습니다. 원문 기사의 내용과 뉘앙스 차이가 있을 수 있으므로 정확한 정보는 원본 링크를 확인하시기 바랍니다.
-                    </p>
+                    <p class="text-sm text-gray-500">이 콘텐츠는 Gemini AI를 통해 자동으로 수집 및 요약되었습니다.</p>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        // 1. 데이터 정의 (App.tsx의 mockNews)
-        const mockNews = [
-            {
-                id: 1,
-                country: 'USA',
-                date: '03/18',
-                title: '14:30 - AI 요약 속보',
-                content: `<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a;">[USA 속보] 연준, 기준금리 동결 결정 및 향후 AI 산업 지원 확대 발표</h2><br>미국 연방준비제도(Fed)가 현재의 기준금리를 동결하기로 결정했습니다.<br>이와 함께 주요 기술 기업들의 AI 투자가 미국 경제 성장의 핵심 동력으로 작용하고 있다고 평가했습니다.<br>정부 차원에서도 AI 인프라 확충과 관련된 규제 완화 및 지원책을 추가로 내놓을 예정입니다.<br><br><strong>링크 :</strong><br>1번 <a href='#' style="color: #2563eb; text-decoration: underline;">연준, 기준금리 5.25~5.50% 연속 동결</a><br>2번 <a href='#' style="color: #2563eb; text-decoration: underline;">파월 의장 "AI 혁신이 경제 연착륙 이끌 것"</a><br>3번 <a href='#' style="color: #2563eb; text-decoration: underline;">미 정부, 실리콘밸리 AI 스타트업 전폭 지원 선언</a>`
-            },
-            {
-                id: 2,
-                country: 'KOREA',
-                date: '03/18',
-                title: '12:00 - AI 요약 속보',
-                content: `<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a;">[KOREA 속보] 한국 반도체 수출 5개월 연속 증가세 지속</h2><br>한국의 반도체 수출이 인공지능(AI) 수요 급증에 힘입어 5개월 연속 전년 동기 대비 증가세를 기록했습니다.<br>메모리 반도체 가격 회복과 고부가가치 제품인 HBM의 판매 호조가 이번 실적을 견인한 것으로 분석됩니다.<br>정부는 반도체 산업의 경쟁력 강화를 위해 인프라 지원 및 세제 혜택을 확대할 방침이라고 밝혔습니다.<br><br><strong>링크 :</strong><br>1번 <a href='#' style="color: #2563eb; text-decoration: underline;">한국 반도체, AI 특풍 타고 수출 고공행진</a><br>2번 <a href='#' style="color: #2563eb; text-decoration: underline;">HBM 수요 폭발... 삼성·SK하이닉스 실적 견인</a><br>3번 <a href='#' style="color: #2563eb; text-decoration: underline;">정부 "용인 반도체 클러스터 전력·용수 인프라 적기 구축"</a>`
-            },
-            {
-                id: 3,
-                country: 'CHINA',
-                date: '03/18',                
-                title: '09:15 - AI 요약 속보',
-                content: `<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a;">[CHINA 속보] 중국, 자체 개발 차세대 AI 언어모델 전격 공개</h2><br>중국의 주요 빅테크 기업 연합이 미국 주요 AI 모델 성능에 필적하는 새로운 대규모 언어모델(LLM)을 공개했습니다.<br>자체 설계한 AI 가속기 칩을 기반으로 훈련되어 서방의 반도체 제재를 우회할 수 있는 가능성을 보여주었습니다.<br>중국 정부는 이를 기반으로 스마트 시티 및 자율주행 산업 등에 즉각 적용할 계획을 발표했습니다.<br><br><strong>링크 :</strong><br>1번 <a href='#' style="color: #2563eb; text-decoration: underline;">中, 독자 개발 '차세대 AI' 전격 공개…기술 굴기 가속</a><br>2번 <a href='#' style="color: #2563eb; text-decoration: underline;">엔비디아 제재 뚫었나? 중국산 AI 칩 성능 테스트 결과</a><br>3번 <a href='#' style="color: #2563eb; text-decoration: underline;">베이징, 차세대 AI 모델 활용한 '초연결 스마트 시티' 구축 착수</a>`
-            }
-        ];
+        // Python 코드에서 생성하는 loadNews 함수와 이름을 맞췄습니다.
+        async function loadNews(filePath) {
+            try {
+                const response = await fetch(filePath);
+                const html = await response.text();
+                
+                // 가져온 HTML에서 body 내용만 추출 (Python이 <html><body>... 로 저장하므로)
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const content = doc.body.innerHTML;
 
-        let selectedId = 1;
+                document.getElementById('article-body').innerHTML = content;
+                document.getElementById('disclaimer').classList.remove('hidden');
+                
+                // 리스트 아이템 디자인 강조 (선택 효과)
+                const items = document.querySelectorAll('#news-list > div');
+                items.forEach(item => {
+                    item.classList.remove('bg-blue-50', 'border-l-4', 'border-l-blue-500');
+                    if(item.getAttribute('onclick').includes(filePath)) {
+                        item.classList.add('bg-blue-50', 'border-l-4', 'border-l-blue-500');
+                    }
+                });
 
-        // 국가별 색상 테마 가져오기
-        function getCountryColor(country) {
-            switch (country) {
-                case 'KOREA': return 'text-blue-600 bg-blue-50 border-blue-200';
-                case 'USA': return 'text-red-600 bg-red-50 border-red-200';
-                case 'CHINA': return 'text-amber-600 bg-amber-50 border-amber-200';
-                default: return 'text-gray-600 bg-gray-50 border-gray-200';
+                lucide.createIcons();
+            } catch (error) {
+                console.error("뉴스 로드 실패:", error);
+                document.getElementById('article-body').innerHTML = "내용을 불러오는 데 실패했습니다.";
             }
         }
 
-        // 화면 렌더링 함수
-        function render() {
-            const listContainer = document.getElementById('news-list');
-            const articleBody = document.getElementById('article-body');
-            
-            // 리스트 그리기
-            listContainer.innerHTML = mockNews.map(news => `
-                <div onclick="selectNews(${news.id})" class="p-4 border-b border-gray-200 cursor-pointer transition-all duration-200 group ${selectedId === news.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50 border-l-4 border-l-transparent'}">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${getCountryColor(news.country)}">${news.country}</span>
-                        <span class="text-gray-400 text-[11px] font-medium tracking-wide">${news.date}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-sm font-bold mt-1 line-clamp-2 ${selectedId === news.id ? 'text-blue-700' : 'text-gray-800 group-hover:text-blue-600'}">
-                            <i data-lucide="zap" class="w-3 h-3 inline mr-1 text-yellow-500"></i>
-                            ${news.title}
-                        </h3>
-                        <i data-lucide="chevron-right" class="w-4 h-4 ${selectedId === news.id ? 'text-blue-500 translate-x-1' : 'text-gray-300'}"></i>
-                    </div>
-                </div>
-            `).join('');
-
-            // 본문 그리기
-            const selectedNews = mockNews.find(n => n.id === selectedId);
-            articleBody.innerHTML = selectedNews ? selectedNews.content : '';
-            
-            // 아이콘 새로고침
-            lucide.createIcons();
-        }
-
-        // 뉴스 선택 이벤트
-        window.selectNews = function(id) {
-            selectedId = id;
-            render();
-        };
-
-        // 초기 실행
-        render();
+        // 초기 아이콘 렌더링
+        lucide.createIcons();
     </script>
 </body>
 </html>
