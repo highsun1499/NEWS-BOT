@@ -3,100 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>글로벌 속보</title>
+    <title>글로벌 뉴스 AI 큐레이터</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 구글 번역 API 스크립트 -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; top: 0 !important; position: static !important; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* 구글 번역 툴바 및 요소 숨기기 */
+        .goog-te-banner-frame.skiptranslate, .goog-te-gadget, .skiptranslate { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+        #google_translate_element { display: none !important; }
+        body { top: 0 !important; }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
 
+    <!-- Header -->
     <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="globe" class="w-6 h-6 text-white"></i></div>
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
+            <div class="bg-blue-600 p-2 rounded-lg">
+                <i data-lucide="globe" class="w-6 h-6 text-white"></i>
+            </div>
             <div>
-                <h1 class="text-xl font-bold text-gray-900">글로벌 속보</h1>
-                <p class="text-xs text-gray-500 flex items-center mt-0.5">
-                    <i data-lucide="bot" class="w-3 h-3 mr-1"></i> Powered by AI
+                <h1 class="text-xl font-bold text-gray-900 leading-tight">글로벌 뉴스 AI 큐레이터</h1>
+                <p class="text-xs text-gray-500 font-medium flex items-center mt-0.5">
+                    <i data-lucide="bot" class="w-3 h-3 mr-1"></i>
+                    Powered by Gemini 2.0 Flash
                 </p>
             </div>
         </div>
-        <div class="flex items-center space-x-2 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-            <i data-lucide="clock" class="w-4 h-4"></i>
-            <span class="font-medium">실시간 수집 가동중</span>
-            <span class="relative flex h-2.5 w-2.5 ml-1">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-            </span>
+
+        <!-- 실시간 수집 대신 들어가는 번역 버튼 영역 -->
+        <div class="flex items-center space-x-4 text-sm font-medium bg-gray-100 px-4 py-2 rounded-full border border-gray-200">
+            <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('ko')">한국어</button>
+            <span class="text-gray-300">|</span>
+            <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('en')">English</button>
+            <span class="text-gray-300">|</span>
+            <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('zh-CN')">中文</button>
         </div>
+        
+        <!-- 숨겨진 구글 번역 요소 -->
+        <div id="google_translate_element"></div>
     </header>
 
+    <!-- Main Content (이전과 동일) -->
     <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-6 bg-white rounded-xl shadow-sm border border-gray-200 h-[800px]">
-        <!-- Python이 이 안에 내용을 채웁니다 -->
         <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full overflow-hidden bg-gray-50/50">
-            <div class="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
+            <div class="p-4 border-b border-gray-200 bg-white">
                 <h2 class="font-bold text-gray-800 flex items-center">
-                    <i data-lucide="newspaper" class="w-4 h-4 mr-2 text-blue-500"></i> 최신 요약 속보
+                    <i data-lucide="newspaper" class="w-4 h-4 mr-2 text-blue-500"></i>
+                    최신 요약 속보
                 </h2>
             </div>
             <div id="news-list" class="overflow-y-auto flex-1">
-                <!-- Python update_index_html()에 의해 기사 리스트가 생성될 자리 -->
-                <p class="p-10 text-center text-gray-400 text-sm">뉴스를 불러오는 중...</p>
+                <!-- Python이 채워넣을 자리 -->
             </div>
         </aside>
 
-        <section id="content-area" class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
+        <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
             <div class="p-6 md:p-10 overflow-y-auto h-full">
-                <div id="article-body" class="max-w-3xl mx-auto prose prose-blue">
-                    <div class="flex flex-col items-center justify-center h-[500px] text-gray-400">
-                        <i data-lucide="zap" class="w-12 h-12 mb-4 text-gray-200"></i>
-                        <p>좌측 리스트에서 뉴스를 선택하세요.</p>
-                    </div>
-                </div>
-                
-                <div id="disclaimer" class="max-w-3xl mx-auto mt-12 p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start hidden">
-                    <i data-lucide="alert-circle" class="w-5 h-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0"></i>
-                    <p class="text-sm text-gray-500">이 콘텐츠는 AI를 통해 자동으로 수집 및 요약되었습니다.</p>
+                <div id="article-body" class="max-w-3xl mx-auto">
+                    <!-- 뉴스 본문 -->
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        // Python 코드에서 생성하는 loadNews 함수와 이름을 맞췄습니다.
+        // 구글 번역 초기화
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ko',
+                includedLanguages: 'ko,en,zh-CN',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        // 언어 변경 함수
+        function translatePage(langCode) {
+            const selectEl = document.querySelector('.goog-te-combo');
+            if (selectEl) {
+                selectEl.value = langCode;
+                selectEl.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // 뉴스 로드 함수 (Python 생성 코드와 호환)
         async function loadNews(filePath) {
             try {
                 const response = await fetch(filePath);
                 const html = await response.text();
-                
-                // 가져온 HTML에서 body 내용만 추출 (Python이 <html><body>... 로 저장하므로)
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const content = doc.body.innerHTML;
-
-                document.getElementById('article-body').innerHTML = content;
-                document.getElementById('disclaimer').classList.remove('hidden');
+                document.getElementById('article-body').innerHTML = doc.body.innerHTML;
                 
-                // 리스트 아이템 디자인 강조 (선택 효과)
-                const items = document.querySelectorAll('#news-list > div');
-                items.forEach(item => {
-                    item.classList.remove('bg-blue-50', 'border-l-4', 'border-l-blue-500');
-                    if(item.getAttribute('onclick').includes(filePath)) {
-                        item.classList.add('bg-blue-50', 'border-l-4', 'border-l-blue-500');
+                // 선택 효과
+                document.querySelectorAll('#news-list > div').forEach(div => {
+                    div.classList.remove('bg-blue-50', 'border-l-4', 'border-l-blue-500');
+                    if(div.getAttribute('onclick').includes(filePath)) {
+                        div.classList.add('bg-blue-50', 'border-l-4', 'border-l-blue-500');
                     }
                 });
-
                 lucide.createIcons();
-            } catch (error) {
-                console.error("뉴스 로드 실패:", error);
-                document.getElementById('article-body').innerHTML = "내용을 불러오는 데 실패했습니다.";
-            }
+            } catch (e) { console.log(e); }
         }
 
-        // 초기 아이콘 렌더링
         lucide.createIcons();
     </script>
 </body>
