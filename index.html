@@ -1,1024 +1,161 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>
-   AI 속보 큐레이터
-  </title>
-<script src="https://cdn.tailwindcss.com">
-</script>
-<style>
-   .no-scrollbar::-webkit-scrollbar { display: none; }
-
-    /* 구글 번역 툴바 및 요소들 원천 봉쇄 */
-    body { 
-        top: 0 !important; 
-        position: static !important; 
-    }
-    .goog-te-banner-frame.skiptranslate, 
-    .goog-te-gadget, 
-    header.skiptranslate { 
-        display: none !important; 
-    }
-    .goog-text-highlight { 
-        background-color: transparent !important; 
-        box-shadow: none !important; 
-    }
-    #google_translate_element { 
-        display: none !important; 
-    }
-    
-    /* 번역 후 상단에 생기는 프레임 제거 */
-    iframe.goog-te-banner-frame {
-        display: none !important;
-    }
-    
-    /* 페이지 전체가 아래로 밀리는 현상 방지 */
-    .skiptranslate {
-        display: none !important;
-    }
-  </style>
-</head>
-<body class="bg-gray-100 h-screen flex flex-col">
-<header class="bg-white shadow-sm p-4 z-10 flex justify-between items-center px-8">
-<h1 class="text-2xl font-bold text-blue-600 cursor-pointer" onclick="location.reload()">
-    AI Breaking News
-   </h1>
-<div class="flex space-x-4 text-sm font-medium">
-<button class="hover:text-blue-600" onclick="translatePage('ko')">
-     한국어
-    </button>
-<span class="text-gray-300">
-     |
-    </span>
-<button class="hover:text-blue-600" onclick="translatePage('en')">
-     English
-    </button>
-<span class="text-gray-300">
-     |
-    </span>
-<button class="hover:text-blue-600" onclick="translatePage('zh-CN')">
-     中文
-    </button>
-</div>
-</header>
-<div class="flex flex-1 overflow-hidden">
-<aside class="w-1/3 lg:w-1/4 bg-white border-r overflow-y-auto no-scrollbar" id="news-list">
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260403_060615_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/03</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:06 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260403_060615_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/03</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:06 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260403_042112_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/03</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:21 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260403_042112_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/03</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:21 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260403_012026_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/03</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:20 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260403_012026_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/03</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:20 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_222250_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:22 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_222250_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:22 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_212747_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:27 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_212747_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:27 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_194203_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:42 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_194203_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:42 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_184148_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:41 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_184148_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:41 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_164524_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                16:45 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_164524_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                16:45 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_155127_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                15:51 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_124815_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                12:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_124815_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                12:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_105316_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:53 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_105316_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:53 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_095947_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                09:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_095947_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                09:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_075900_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                07:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_075900_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                07:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_060552_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:05 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_060552_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:05 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_042013_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:20 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_042013_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:20 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_011834_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:18 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260402_011834_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/02</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:18 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_222721_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:27 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_222721_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:27 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_213324_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:33 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_213324_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:33 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_195148_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:51 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_195148_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:51 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_184525_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:45 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_184525_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:45 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_160138_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                16:01 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_160138_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                16:01 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_125452_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                12:54 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_125452_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                12:54 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_105808_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:58 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_105808_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:58 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_095914_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                09:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_095914_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                09:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_062151_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:21 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_062151_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:21 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_043957_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:39 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_043957_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:39 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_012813_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:28 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260401_012813_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">04/01</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:28 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_222502_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:25 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_222502_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:25 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_212920_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:29 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_212920_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:29 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_194811_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_194811_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_184618_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:46 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_184618_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:46 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_165716_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                16:57 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_165716_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                16:57 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_155844_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                15:58 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_155844_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                15:58 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_125331_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                12:53 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_125331_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                12:53 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_104431_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:44 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_104431_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:44 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_095455_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                09:54 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_095455_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                09:54 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_061046_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:10 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_061046_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:10 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_042802_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:28 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_042802_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                04:28 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_012127_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:21 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260331_012127_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/31</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                01:21 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_222454_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                22:24 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_213332_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:33 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_213332_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:33 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_194834_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_180540_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:05 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_180540_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                18:05 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_104840_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_104840_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_061721_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:17 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260330_061721_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/30</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                06:17 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_210236_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:02 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_210236_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:02 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_194805_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_194805_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:48 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_155909_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                15:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_155909_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                15:59 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_100439_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:04 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260329_100439_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/29</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                10:04 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260328_210046_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/28</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:00 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260328_210046_KOREA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/28</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                21:00 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260328_194459_USA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/28</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:44 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260328_194459_USA_0.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-<span class="text-gray-400 text-[10px]">03/28</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                19:44 - AI 요약 속보
-            </h2>
-</div>
-<div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260328_155832_KOREA_1.html')">
-<div class="flex justify-between items-start">
-<span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-<span class="text-gray-400 text-[10px]">03/28</span>
-</div>
-<h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                15:58 - AI 요약 속보
-            </h2>
-</div>
-</aside>
-<main class="flex-1 bg-gray-50 overflow-y-auto p-6 lg:p-12" id="content-area">
-<div class="h-full flex flex-col items-center justify-center text-gray-400">
-<p class="text-xl">
-      왼쪽 목록에서 뉴스를 선택해 주세요.
-     </p>
-</div>
-</main>
-</div>
-<div id="google_translate_element">
-</div>
-<script type="text/javascript">
-   function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'ko',
-                includedLanguages: 'ko,en,zh-CN',
-                autoDisplay: false
-            }, 'google_translate_element');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글로벌 뉴스 AI 큐레이터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
 
-        // 버튼 클릭 시 호출될 번역 함수
-   function translatePage(langCode) {
-       const selectField = document.querySelector(".goog-te-combo");
-       if (selectField) {
-           selectField.value = langCode;
-           selectField.dispatchEvent(new Event('change'));
-           
-           // 번역 후 브라우저가 강제로 스크롤이나 레이아웃을 옮기는 것 방지
-           setTimeout(() => {
-               document.body.style.top = "0px";
-               // 툴바가 생성되었다면 즉시 제거 시도
-               const toolbar = document.querySelector('.goog-te-banner-frame');
-               if(toolbar) toolbar.style.display = 'none';
-           }, 100);
-       }
-   }
-  </script>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript">
-</script>
-<script>
-   async function loadNews(url) {
-            const contentArea = document.getElementById('content-area');
-            contentArea.innerHTML = '<div class="text-center mt-20 text-blue-500 font-bold">Loading...</div>';
-            try {
-                const response = await fetch(url);
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                contentArea.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm max-w-4xl mx-auto">${doc.body.innerHTML}</div>`;
-            } catch (error) {
-                contentArea.innerHTML = '<div class="text-red-500 text-center mt-20">Error.</div>';
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg">
+                <i data-lucide="globe" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 leading-tight">글로벌 뉴스 AI 큐레이터</h1>
+                <p class="text-xs text-gray-500 font-medium flex items-center mt-0.5">
+                    <i data-lucide="bot" class="w-3 h-3 mr-1"></i>
+                    Powered by Gemini 2.0 Flash
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <span class="font-medium">실시간 수집 가동중</span>
+            <span class="relative flex h-2.5 w-2.5 ml-1">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-6 bg-white rounded-xl shadow-sm border border-gray-200 h-[800px]">
+        
+        <!-- Sidebar -->
+        <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full overflow-hidden bg-gray-50/50">
+            <div class="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
+                <h2 class="font-bold text-gray-800 flex items-center">
+                    <i data-lucide="newspaper" class="w-4 h-4 mr-2 text-blue-500"></i>
+                    최신 요약 속보
+                </h2>
+                <span id="news-count" class="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-1 rounded-md">3건</span>
+            </div>
+            
+            <div id="news-list" class="overflow-y-auto flex-1 flex flex-col">
+                <!-- 뉴스 리스트가 자바스크립트로 삽입됩니다 -->
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <section id="content-area" class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
+            <div class="p-6 md:p-10 overflow-y-auto h-full">
+                <div id="article-body" class="max-w-3xl mx-auto">
+                    <!-- 뉴스 본문이 자바스크립트로 삽입됩니다 -->
+                </div>
+                
+                <div class="max-w-3xl mx-auto mt-12 p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0"></i>
+                    <p class="text-sm text-gray-500 leading-relaxed">
+                        이 콘텐츠는 Gemini AI를 통해 자동으로 수집, 번역 및 요약되었습니다. 원문 기사의 내용과 뉘앙스 차이가 있을 수 있으므로 정확한 정보는 원본 링크를 확인하시기 바랍니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 1. 데이터 정의 (App.tsx의 mockNews)
+        const mockNews = [
+            {
+                id: 1,
+                country: 'USA',
+                date: '03/18',
+                title: '14:30 - AI 요약 속보',
+                content: `<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a;">[USA 속보] 연준, 기준금리 동결 결정 및 향후 AI 산업 지원 확대 발표</h2><br>미국 연방준비제도(Fed)가 현재의 기준금리를 동결하기로 결정했습니다.<br>이와 함께 주요 기술 기업들의 AI 투자가 미국 경제 성장의 핵심 동력으로 작용하고 있다고 평가했습니다.<br>정부 차원에서도 AI 인프라 확충과 관련된 규제 완화 및 지원책을 추가로 내놓을 예정입니다.<br><br><strong>링크 :</strong><br>1번 <a href='#' style="color: #2563eb; text-decoration: underline;">연준, 기준금리 5.25~5.50% 연속 동결</a><br>2번 <a href='#' style="color: #2563eb; text-decoration: underline;">파월 의장 "AI 혁신이 경제 연착륙 이끌 것"</a><br>3번 <a href='#' style="color: #2563eb; text-decoration: underline;">미 정부, 실리콘밸리 AI 스타트업 전폭 지원 선언</a>`
+            },
+            {
+                id: 2,
+                country: 'KOREA',
+                date: '03/18',
+                title: '12:00 - AI 요약 속보',
+                content: `<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a;">[KOREA 속보] 한국 반도체 수출 5개월 연속 증가세 지속</h2><br>한국의 반도체 수출이 인공지능(AI) 수요 급증에 힘입어 5개월 연속 전년 동기 대비 증가세를 기록했습니다.<br>메모리 반도체 가격 회복과 고부가가치 제품인 HBM의 판매 호조가 이번 실적을 견인한 것으로 분석됩니다.<br>정부는 반도체 산업의 경쟁력 강화를 위해 인프라 지원 및 세제 혜택을 확대할 방침이라고 밝혔습니다.<br><br><strong>링크 :</strong><br>1번 <a href='#' style="color: #2563eb; text-decoration: underline;">한국 반도체, AI 특풍 타고 수출 고공행진</a><br>2번 <a href='#' style="color: #2563eb; text-decoration: underline;">HBM 수요 폭발... 삼성·SK하이닉스 실적 견인</a><br>3번 <a href='#' style="color: #2563eb; text-decoration: underline;">정부 "용인 반도체 클러스터 전력·용수 인프라 적기 구축"</a>`
+            },
+            {
+                id: 3,
+                country: 'CHINA',
+                date: '03/18',                
+                title: '09:15 - AI 요약 속보',
+                content: `<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a;">[CHINA 속보] 중국, 자체 개발 차세대 AI 언어모델 전격 공개</h2><br>중국의 주요 빅테크 기업 연합이 미국 주요 AI 모델 성능에 필적하는 새로운 대규모 언어모델(LLM)을 공개했습니다.<br>자체 설계한 AI 가속기 칩을 기반으로 훈련되어 서방의 반도체 제재를 우회할 수 있는 가능성을 보여주었습니다.<br>중국 정부는 이를 기반으로 스마트 시티 및 자율주행 산업 등에 즉각 적용할 계획을 발표했습니다.<br><br><strong>링크 :</strong><br>1번 <a href='#' style="color: #2563eb; text-decoration: underline;">中, 독자 개발 '차세대 AI' 전격 공개…기술 굴기 가속</a><br>2번 <a href='#' style="color: #2563eb; text-decoration: underline;">엔비디아 제재 뚫었나? 중국산 AI 칩 성능 테스트 결과</a><br>3번 <a href='#' style="color: #2563eb; text-decoration: underline;">베이징, 차세대 AI 모델 활용한 '초연결 스마트 시티' 구축 착수</a>`
+            }
+        ];
+
+        let selectedId = 1;
+
+        // 국가별 색상 테마 가져오기
+        function getCountryColor(country) {
+            switch (country) {
+                case 'KOREA': return 'text-blue-600 bg-blue-50 border-blue-200';
+                case 'USA': return 'text-red-600 bg-red-50 border-red-200';
+                case 'CHINA': return 'text-amber-600 bg-amber-50 border-amber-200';
+                default: return 'text-gray-600 bg-gray-50 border-gray-200';
             }
         }
-  </script>
+
+        // 화면 렌더링 함수
+        function render() {
+            const listContainer = document.getElementById('news-list');
+            const articleBody = document.getElementById('article-body');
+            
+            // 리스트 그리기
+            listContainer.innerHTML = mockNews.map(news => `
+                <div onclick="selectNews(${news.id})" class="p-4 border-b border-gray-200 cursor-pointer transition-all duration-200 group ${selectedId === news.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50 border-l-4 border-l-transparent'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${getCountryColor(news.country)}">${news.country}</span>
+                        <span class="text-gray-400 text-[11px] font-medium tracking-wide">${news.date}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold mt-1 line-clamp-2 ${selectedId === news.id ? 'text-blue-700' : 'text-gray-800 group-hover:text-blue-600'}">
+                            <i data-lucide="zap" class="w-3 h-3 inline mr-1 text-yellow-500"></i>
+                            ${news.title}
+                        </h3>
+                        <i data-lucide="chevron-right" class="w-4 h-4 ${selectedId === news.id ? 'text-blue-500 translate-x-1' : 'text-gray-300'}"></i>
+                    </div>
+                </div>
+            `).join('');
+
+            // 본문 그리기
+            const selectedNews = mockNews.find(n => n.id === selectedId);
+            articleBody.innerHTML = selectedNews ? selectedNews.content : '';
+            
+            // 아이콘 새로고침
+            lucide.createIcons();
+        }
+
+        // 뉴스 선택 이벤트
+        window.selectNews = function(id) {
+            selectedId = id;
+            render();
+        };
+
+        // 초기 실행
+        render();
+    </script>
 </body>
 </html>
