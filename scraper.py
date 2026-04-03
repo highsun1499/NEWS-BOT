@@ -79,7 +79,7 @@ def generate_post(news_group, country):
         )
         
         # 안정적인 모델명 사용 (gemini-2.0-flash 추천)
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+        response = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=prompt)
         return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
         print(f"AI 에러: {e}"); return None
