@@ -84,11 +84,11 @@ def generate_post(news_group, country):
     except Exception as e:
         print(f"AI 에러: {e}"); return None
 
-# ⭐ 핵심 수정: index.html을 건드리지 않고, 'news/news_list.html' 파일만 만듭니다!
 def update_news_list():
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     
+    # 여기서 화면에 보이는 리스트는 최신 100개까지만 생성
     for file in post_files[:100]:
         filename = os.path.basename(file)
         parts = filename.replace(".html", "").split('_')
@@ -128,11 +128,25 @@ def update_news_list():
         </div>
         """
     
-    # news 폴더 안에 리스트 전용 파일 저장
     list_path = os.path.join("news", "news_list.html")
     with open(list_path, "w", encoding="utf-8") as f:
         f.write(links_html)
-    print("목록 파일(news_list.html) 분리 생성 완료!")
+    print("목록 파일(news_list.html) 갱신 완료!")
+
+# ⭐ [추가된 기능] 최대 N개까지만 유지하고 오래된 파일 치우기
+def cleanup_old_news(max_files=200):
+    all_files = sorted(glob.glob("news/post_*.html"), reverse=True)
+    
+    # 지정한 개수를 초과하는 오래된 파일들 골라내기
+    files_to_delete = all_files[max_files:]
+    
+    for file_path in files_to_delete:
+        try:
+            os.remove(file_path)
+            print(f"🗑️ 자동 삭제 완료: {os.path.basename(file_path)}")
+        except Exception as e:
+            print(f"파일 삭제 에러 ({file_path}): {e}")
+
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
@@ -144,6 +158,7 @@ if __name__ == "__main__":
         date_str = now.strftime('%Y%m%d')
         time_str = now.strftime('%H%M%S')
         
+        # 가장 비중 높은 1개 기사만 생성
         for i, group in enumerate(groups[:1]):
             post_content = generate_post(group, country_code)
             if post_content:
@@ -152,5 +167,8 @@ if __name__ == "__main__":
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
                 time.sleep(1)
     
-    # 함수 이름 변경 반영
+    # 1. 왼쪽 사이드바 목록 갱신
     update_news_list()
+    
+    # 2. 용량 관리를 위해 가장 최신 200개만 남기고 옛날 기사 완전 삭제
+    cleanup_old_news(max_files=200)
