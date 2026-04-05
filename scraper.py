@@ -72,13 +72,13 @@ def generate_post(news_group, country):
             f"<h2>[{country} 속보] 핵심 제목</h2>\n<br>\n"
             f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
             f"<strong>링크 :</strong><br>\n"
-            f"1번 <a href='URL' target='_blank'>기사 제목</a><br>\n"
-            f"2번 <a href='URL' target='_blank'>기사 제목</a><br>\n"
-            f"3번 <a href='URL' target='_blank'>기사 제목</a><br>\n\n"
+            f"1번<br><a href='URL' target='_blank'>기사 제목</a><br>\n"
+            f"2번<br><a href='URL' target='_blank'>기사 제목</a><br>\n"
+            f"3번<br><a href='URL' target='_blank'>기사 제목</a><br>\n\n"
             f"순수 HTML만 출력해."
         )
         
-        # 안정적인 모델명 사용 (gemini-2.0-flash 추천)
+        # 안정적인 모델명 사용
         response = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=prompt)
         return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         date_str = now.strftime('%Y%m%d')
         time_str = now.strftime('%H%M%S')
         
-        for i, group in enumerate(groups[:2]):
+        for i, group in enumerate(groups[:1]):
             post_content = generate_post(group, country_code)
             if post_content:
                 file_path = f"news/post_{date_str}_{time_str}_{country_code}_{i}.html"
