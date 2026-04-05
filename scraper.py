@@ -71,7 +71,7 @@ def generate_post(news_group, country):
             f"[출력 형식]\n"
             f"<h2>[{country} 속보] 핵심 제목</h2>\n<br>\n"
             f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
-            f"<strong>링크 :</strong><br>\n"
+            f"<strong>링크 :</strong><br><br>\n"
             f"1번<br><a href='URL' target='_blank'>기사 제목</a><br>\n"
             f"2번<br><a href='URL' target='_blank'>기사 제목</a><br>\n"
             f"3번<br><a href='URL' target='_blank'>기사 제목</a><br>\n\n"
@@ -84,8 +84,8 @@ def generate_post(news_group, country):
     except Exception as e:
         print(f"AI 에러: {e}"); return None
 
-# 4. index.html 업데이트
-def update_index_html():
+# ⭐ 핵심 수정: index.html을 건드리지 않고, 'news/news_list.html' 파일만 만듭니다!
+def update_news_list():
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     
@@ -114,7 +114,6 @@ def update_index_html():
                 time_label = "확인중"
 
         except Exception as e:
-            print(f"파일명 파싱 에러 ({filename}): {e}")
             pass
 
         links_html += f"""
@@ -129,16 +128,11 @@ def update_index_html():
         </div>
         """
     
-    if os.path.exists("index.html"):
-        with open("index.html", "r", encoding="utf-8") as f:
-            soup = BeautifulSoup(f.read(), 'html.parser')
-        target_list = soup.find(id='news-list')
-        if target_list:
-            target_list.clear()
-            target_list.append(BeautifulSoup(links_html, 'html.parser'))
-            with open("index.html", "w", encoding="utf-8") as f:
-                f.write(str(soup))
-            print("index.html 갱신 완료!")
+    # news 폴더 안에 리스트 전용 파일 저장
+    list_path = os.path.join("news", "news_list.html")
+    with open(list_path, "w", encoding="utf-8") as f:
+        f.write(links_html)
+    print("목록 파일(news_list.html) 분리 생성 완료!")
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
@@ -153,9 +147,10 @@ if __name__ == "__main__":
         for i, group in enumerate(groups[:1]):
             post_content = generate_post(group, country_code)
             if post_content:
-                file_path = f"news/post_{date_str}_{time_str}_{country_code}_{i}.html"
+                file_path = f"news/post_{date_str}_{time_str}_{country_code}_0.html"
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
                 time.sleep(1)
     
-    update_index_html()
+    # 함수 이름 변경 반영
+    update_news_list()
