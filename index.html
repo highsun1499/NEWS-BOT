@@ -10,22 +10,24 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; }
+        /* [수정됨] 상단 여백 강제 생성 방지 */
+        body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; min-height: 100vh; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        .goog-te-banner-frame { display: none !important; }
+        /* [수정됨] 구글 번역 상단 배너를 진짜 완벽하게 멸종시키는 CSS */
+        iframe.skiptranslate, .goog-te-banner-frame { display: none !important; }
         .goog-tooltip, .goog-tooltip:hover { display: none !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; border: none !important; }
         
         #google_translate_element { 
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            opacity: 0;
-            top: 0;
-            left: 0;
-            z-index: -100;
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            top: -1000px !important;
+            left: -1000px !important;
+            z-index: -100 !important;
         }
     </style>
 </head>
@@ -65,10 +67,10 @@
             </h2>
         </div>
         
-        <!-- ⭐ 여기가 아주 텅 비었습니다! 파이썬이 만든 목록이 자바스크립트를 통해 이곳으로 쏙 들어옵니다. -->
+        <!-- 기사 목록 들어오는 곳 -->
         <div class="overflow-y-auto flex-1" id="news-list"></div>
-        
     </aside>
+    
     <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         <div class="p-6 md:p-10 overflow-y-auto h-full">
             <div class="max-w-3xl mx-auto" id="article-body">
@@ -86,29 +88,42 @@
         }, 'google_translate_element');
     }
 
+    // ⚡ 번역 및 버그 방어 처리
     function translatePage(langCode) {
+        // [핵심 변경] 한국어(원본)로 돌아갈 때는 구글 위젯 버그 방지를 위해 쿠키 포맷 리셋 후 찰나의 새로고침을 진행합니다.
+        if (langCode === 'ko') {
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
+            location.reload(); 
+            return;
+        }
+
         const selectEl = document.querySelector('.goog-te-combo');
         if (selectEl) {
-            selectEl.value = (langCode === 'ko') ? '' : langCode;
+            selectEl.value = langCode;
             selectEl.dispatchEvent(new Event('change', { bubbles: true }));
         } else {
             if (window.location.protocol === 'file:') {
                 alert("현재 보안상 구글 번역이 막히는 로컬(file://) 환경입니다.\n터미널에서[ python -m http.server ] 를 입력하고\n[ http://localhost:8000 ] 으로 접속해주세요!");
             } else {
-                document.cookie = (langCode === 'ko') ? 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;' : 'googtrans=/ko/' + langCode + '; path=/;';
+                document.cookie = 'googtrans=/ko/' + langCode + '; path=/;';
                 location.reload(); 
             }
         }
     }
 
+    // 홈 버튼: 메모리까지 초기화하여 완벽한 빈 화면으로!
     function goHome() {
+        // 읽고 있던 기사 번역 초기화 (한국어로 돌아가기)
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
         sessionStorage.removeItem("currentNewsFilePath");
         location.reload();
     }
 
-    // ⚡ 최초 접속 시 작동하는 흐름 (목록 불러오기 -> 이전 기사 띄우기)
+    // ⚡ 사이드바 목록과 이전 기사 불러오기
     document.addEventListener("DOMContentLoaded", async () => {
-        await loadNewsList(); // 먼저 사이드바 기사 목록 삽입
+        await loadNewsList();
 
         const savedArticle = sessionStorage.getItem("currentNewsFilePath");
         if (savedArticle) { 
@@ -116,7 +131,6 @@
         }
     });
 
-    // ⚡ 파이썬이 만든 기사 목록(news_list.html)을 가져와 사이드바에 넣는 함수
     async function loadNewsList() {
         try {
             const response = await fetch('./news/news_list.html');
@@ -129,7 +143,7 @@
         }
     }
 
-    // 기존 기사 본문 로드 함수
+    // 기사 본문 불러오기 및 재번역 감지
     async function loadNews(filePath) {
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
@@ -148,8 +162,9 @@
             });
             lucide.createIcons();
 
+            // 외국어로 설정해둔 상태에서 새 기사 누르면 바로 다시 외국어로 변경해줌
             const selectEl = document.querySelector('.goog-te-combo');
-            if (selectEl && selectEl.value !== '') {
+            if (selectEl && selectEl.value !== '' && selectEl.value !== 'ko') {
                 setTimeout(() => { selectEl.dispatchEvent(new Event('change', { bubbles: true })); }, 300); 
             }
         } catch (e) { console.error(e); }
