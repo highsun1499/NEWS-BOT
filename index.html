@@ -6,7 +6,6 @@
     <title>글로벌 속보</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- 구글 번역 API 스크립트 -->
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript"></script>
     
     <style>
@@ -14,12 +13,10 @@
         body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* 지저분한 구글 번역 팝업과 상단바만 정확히 저격해서 숨김 */
         .goog-te-banner-frame { display: none !important; }
         .goog-tooltip, .goog-tooltip:hover { display: none !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; border: none !important; }
         
-        /* [핵심] 위젯 생성이 차단되지 않도록 아주 작게 만들어서 구석에 둠 */
         #google_translate_element { 
             position: absolute;
             width: 1px;
@@ -47,7 +44,7 @@
             </p>
         </div>
     </div>
-    <!-- 번역 버튼 영역 -->
+    <!-- 번역 버튼 -->
     <div class="flex items-center space-x-4 text-sm font-medium bg-gray-100 px-4 py-2 rounded-full border border-gray-200">
         <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('ko')">한국어</button>
         <span class="text-gray-300">|</span>
@@ -55,7 +52,6 @@
         <span class="text-gray-300">|</span>
         <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('zh-CN')">中文</button>
     </div>
-    <!-- 숨겨진 구글 번역 요소 -->
     <div id="google_translate_element"></div>
 </header>
 
@@ -68,30 +64,15 @@
                 최신 요약 속보
             </h2>
         </div>
-        <div class="overflow-y-auto flex-1" id="news-list">
-            
-            <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260405_060916_KOREA_1.html')">
-                <div class="flex justify-between items-start">
-                    <span class="text-blue-500 text-[10px] font-bold uppercase">KOREA</span>
-                    <span class="text-gray-400 text-[10px]">04/05</span>
-                </div>
-                <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">06:09 - AI 요약 속보</h2>
-            </div>
-            <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/post_20260405_042910_USA_0.html')">
-                <div class="flex justify-between items-start">
-                    <span class="text-blue-500 text-[10px] font-bold uppercase">USA</span>
-                    <span class="text-gray-400 text-[10px]">04/05</span>
-                </div>
-                <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">04:29 - AI 요약 속보</h2>
-            </div>
-            <!-- 필요에 따라 뉴스 목록을 유지하세요 -->
-
-        </div>
+        
+        <!-- ⭐ 여기가 아주 텅 비었습니다! 파이썬이 만든 목록이 자바스크립트를 통해 이곳으로 쏙 들어옵니다. -->
+        <div class="overflow-y-auto flex-1" id="news-list"></div>
+        
     </aside>
     <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         <div class="p-6 md:p-10 overflow-y-auto h-full">
             <div class="max-w-3xl mx-auto" id="article-body">
-                <!-- 여기에 기사 로드됨 -->
+                <p class="text-gray-400 text-center mt-10">좌측에서 기사를 선택해주세요.</p>
             </div>
         </div>
     </section>
@@ -102,22 +83,18 @@
         new google.translate.TranslateElement({
             pageLanguage: 'ko',
             includedLanguages: 'ko,en,zh-CN'
-            // [수정] 위젯 차단을 막기 위해 autoDisplay 옵션 삭제
         }, 'google_translate_element');
     }
 
     function translatePage(langCode) {
         const selectEl = document.querySelector('.goog-te-combo');
-        
         if (selectEl) {
             selectEl.value = (langCode === 'ko') ? '' : langCode;
             selectEl.dispatchEvent(new Event('change', { bubbles: true }));
         } else {
-            // [수정됨] 만약 file:// 환경이라 위젯이 안 만들어졌을 때의 초강력 대처 로직 추가
             if (window.location.protocol === 'file:') {
-                alert("현재 보안상 구글 번역이 막히는 로컬(file://) 환경입니다.\n파이썬이 설치되어 있다면 터미널에서\n[ python -m http.server ] 를 입력하고\n[ http://localhost:8000 ] 으로 접속해주세요!");
+                alert("현재 보안상 구글 번역이 막히는 로컬(file://) 환경입니다.\n터미널에서[ python -m http.server ] 를 입력하고\n[ http://localhost:8000 ] 으로 접속해주세요!");
             } else {
-                // 웹 서버 환경인데 딜레이된 경우 강제 쿠키 조작 후 새로고침
                 document.cookie = (langCode === 'ko') ? 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;' : 'googtrans=/ko/' + langCode + '; path=/;';
                 location.reload(); 
             }
@@ -129,11 +106,30 @@
         location.reload();
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
+    // ⚡ 최초 접속 시 작동하는 흐름 (목록 불러오기 -> 이전 기사 띄우기)
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadNewsList(); // 먼저 사이드바 기사 목록 삽입
+
         const savedArticle = sessionStorage.getItem("currentNewsFilePath");
-        if (savedArticle) { loadNews(savedArticle); }
+        if (savedArticle) { 
+            loadNews(savedArticle); 
+        }
     });
 
+    // ⚡ 파이썬이 만든 기사 목록(news_list.html)을 가져와 사이드바에 넣는 함수
+    async function loadNewsList() {
+        try {
+            const response = await fetch('./news/news_list.html');
+            if (response.ok) {
+                const html = await response.text();
+                document.getElementById('news-list').innerHTML = html;
+            }
+        } catch (e) {
+            console.error("목록 파일을 불러올 수 없습니다:", e);
+        }
+    }
+
+    // 기존 기사 본문 로드 함수
     async function loadNews(filePath) {
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
