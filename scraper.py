@@ -51,9 +51,9 @@ def group_similar_news(news_list):
 # 3. GitHub GPT-5 포스팅 생성 (수정된 핵심 부분)
 def generate_post(news_group, country):
     # 환경 변수에서 GITHUB_TOKEN을 가져옵니다.
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("TOKEN_GITHUB")
     if not token: 
-        print("에러: GITHUB_TOKEN이 설정되지 않았습니다.")
+        print("에러: TOKEN_GITHUB 설정되지 않았습니다.")
         return None
         
     try:
