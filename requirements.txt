@@ -1,4 +1,5 @@
-google-genai
+azure-ai-inference
+azure-core
 beautifulsoup4
 requests
 lxml
