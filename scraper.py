@@ -2,19 +2,17 @@ import os
 import requests
 import glob
 from bs4 import BeautifulSoup
-from google import genai
 from datetime import datetime
 import time
 
+# [새로 추가된 GitHub (Azure) LLM 라이브러리]
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage
+from azure.core.credentials import AzureKeyCredential
+
 # 1. 뉴스 수집 (국가별)
 def get_global_news():
-    # 현재 '시(Hour)'를 가져옵니다. (0~23)
     current_hour = datetime.now().hour
-    
-    # 시간에 따른 사이클 설정 (시간 % 3)
-    # 0, 3, 6, 9...시 : 한국
-    # 1, 4, 7, 10...시 : 미국
-    # 2, 5, 8, 11...시 : 중국
     cycle = current_hour % 3
     
     if cycle == 0:
@@ -33,11 +31,11 @@ def get_global_news():
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "xml")
         items = soup.find_all("item")
-        news_data = [{"title": item.title.text, "link": item.link.text} for item in items[:100]]
+        news_data =[{"title": item.title.text, "link": item.link.text} for item in items[:100]]
         return news_data, country
     except Exception as e:
         print(f"수집 에러: {e}")
-        return [], "ERROR"
+        return[], "ERROR"
 
 # 2. 그룹화 로직
 def group_similar_news(news_list):
@@ -46,25 +44,40 @@ def group_similar_news(news_list):
         words = news['title'].split()
         if len(words) > 1:
             group_key = " ".join(words[:2])
-            if group_key not in groups: groups[group_key] = []
+            if group_key not in groups: groups[group_key] =[]
             groups[group_key].append(news)
     return sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
 
-# 3. Gemini 포스팅 생성 (수정 완료)
+# 3. GitHub GPT-5 포스팅 생성 (수정된 핵심 부분)
 def generate_post(news_group, country):
-    api_key = os.environ.get("GEMINI_API")
-    if not api_key: return None
+    # 환경 변수에서 GITHUB_TOKEN을 가져옵니다.
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token: 
+        print("에러: GITHUB_TOKEN이 설정되지 않았습니다.")
+        return None
+        
     try:
-        client = genai.Client(api_key=api_key)
+        endpoint = "https://models.github.ai/inference"
+        model_name = "openai/gpt-5"  # 요청하신 모델 지정
+        
+        # 클라이언트 초기화
+        client = ChatCompletionsClient(
+            endpoint=endpoint,
+            credential=AzureKeyCredential(token),
+        )
         
         # 기사 목록 문자열 생성
         context = "\n".join([f"{i+1}. {n['title']} ({n['link']})" for i, n in enumerate(news_group)])
         
-        # [핵심 수정 부분] prompt 안에 context(기사 목록)를 포함시켜야 합니다.
-        prompt = (
+        # System 역할: AI의 페르소나 및 기본 지시사항
+        system_prompt = (
             f"너는 글로벌 뉴스 전문 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
             f"다음 기사들이 해당 국가의 언어라면 한국어로 먼저 번역해.\n"
-            f"그 후 아래 형식을 엄격히 지켜서 요약해.\n\n"
+            f"그 후 아래 형식을 엄격히 지켜서 요약해."
+        )
+        
+        # User 역할: 구체적인 데이터 및 출력 형식 요구
+        user_prompt = (
             f"========= [분석할 기사 목록] =========\n"
             f"{context}\n"
             f"======================================\n\n"
@@ -78,17 +91,28 @@ def generate_post(news_group, country):
             f"순수 HTML만 출력해."
         )
         
-        # 안정적인 모델명 사용
-        response = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=prompt)
-        return response.text.replace("```html", "").replace("```", "").strip()
+        # API 통신 (메시지 배열로 구성)
+        response = client.complete(
+            messages=[
+                SystemMessage(content=system_prompt),
+                UserMessage(content=user_prompt),
+            ],
+            model=model_name
+        )
+        
+        # 응답 추출 및 마크다운 정리
+        output = response.choices[0].message.content
+        return output.replace("```html", "").replace("```", "").strip()
+        
     except Exception as e:
-        print(f"AI 에러: {e}"); return None
+        print(f"AI 에러: {e}")
+        return None
 
+# 왼쪽 사이드바 목록 생성
 def update_news_list():
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     
-    # 여기서 화면에 보이는 리스트는 최신 100개까지만 생성
     for file in post_files[:100]:
         filename = os.path.basename(file)
         parts = filename.replace(".html", "").split('_')
@@ -133,20 +157,17 @@ def update_news_list():
         f.write(links_html)
     print("목록 파일(news_list.html) 갱신 완료!")
 
-# ⭐ [추가된 기능] 최대 N개까지만 유지하고 오래된 파일 치우기
+# 용량 관리
 def cleanup_old_news(max_files=200):
     all_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     
-    # 지정한 개수를 초과하는 오래된 파일들 골라내기
     files_to_delete = all_files[max_files:]
-    
     for file_path in files_to_delete:
         try:
             os.remove(file_path)
             print(f"🗑️ 자동 삭제 완료: {os.path.basename(file_path)}")
         except Exception as e:
             print(f"파일 삭제 에러 ({file_path}): {e}")
-
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
@@ -158,7 +179,6 @@ if __name__ == "__main__":
         date_str = now.strftime('%Y%m%d')
         time_str = now.strftime('%H%M%S')
         
-        # 가장 비중 높은 1개 기사만 생성
         for i, group in enumerate(groups[:1]):
             post_content = generate_post(group, country_code)
             if post_content:
@@ -167,8 +187,5 @@ if __name__ == "__main__":
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
                 time.sleep(1)
     
-    # 1. 왼쪽 사이드바 목록 갱신
     update_news_list()
-    
-    # 2. 용량 관리를 위해 가장 최신 200개만 남기고 옛날 기사 완전 삭제
     cleanup_old_news(max_files=200)
