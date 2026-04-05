@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- ⭐ [매우 중요] 번역기 설정(Init) 함수가 무조건 먼저 정의되어야 합니다! -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -16,35 +15,47 @@
             }, 'google_translate_element');
         }
     </script>
-    <!-- ⭐ 그 다음 번역기를 불러와야 에러 없이 즉각적으로 화면 뒤에 번역 위젯이 만들어집니다. -->
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; min-height: 100vh; }
+        
+        /* [수정됨] 페이지 전체의 높이를 화면에 딱 맞게 고정하고, 겉 화면은 스크롤되지 않도록 차단 */
+        body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; overflow: hidden; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* 구글 상단 배너 및 지저분한 팝업창 완벽 숨김 */
         iframe.skiptranslate, .goog-te-banner-frame { display: none !important; }
         .goog-tooltip, .goog-tooltip:hover { display: none !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; border: none !important; }
         
-        /* 번역 위젯을 투명하게 만들어 숨김 (display:none 을 쓰면 위젯이 생성되지 않음) */
         #google_translate_element { 
             position: absolute;
-            width: 0px;
-            height: 0px;
-            overflow: hidden;
-            top: -9999px;
-            left: -9999px;
-            opacity: 0;
-            z-index: -100;
+            width: 0px; height: 0px; overflow: hidden;
+            top: -9999px; left: -9999px; opacity: 0; z-index: -100;
+        }
+
+        /* ⭐ [새로 추가됨] 예쁘고 명확하게 보이는 커스텀 스크롤바 */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f8fafc; /* 연한 배경 */
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* 스크롤바 막대 색상 */
+            border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* 마우스 올렸을 때 색상 */
         }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
-<!-- Header -->
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+
+<!-- [핵심 변경] min-h-screen 대신 h-screen을 써서 화면 길이를 사용자 모니터 100%에 완벽 고정 -->
+<body class="bg-gray-50 flex flex-col h-screen">
+
+<!-- Header (flex-shrink-0 으로 크기 찌그러짐 방지) -->
+<header class="bg-white border-b border-gray-200 flex-shrink-0 px-6 py-4 flex items-center justify-between z-10">
     <div class="flex items-center space-x-3 cursor-pointer" onclick="goHome()">
         <div class="bg-blue-600 p-2 rounded-lg">
             <i class="w-6 h-6 text-white" data-lucide="globe"></i>
@@ -65,27 +76,31 @@
         <span class="text-gray-300">|</span>
         <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('zh-CN')">中文</button>
     </div>
-    
-    <!-- 숨겨진 구글 번역 요소가 생성될 공간 -->
+    <!-- 숨겨진 구글 번역 요소 -->
     <div id="google_translate_element"></div>
 </header>
 
 <!-- Main Content -->
-<main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-6 bg-white rounded-xl shadow-sm border border-gray-200 h-[800px]">
-    <!-- 사이드바: 기사 목록 로드 공간 -->
-    <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full overflow-hidden bg-gray-50/50">
-        <div class="p-4 border-b border-gray-200 bg-white">
+<!-- [핵심 변경] my-6 이었던 마진을 줄이고, 브라우저 화면 안에서만 가득 차게 설정 -->
+<main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-4 bg-white rounded-xl shadow-sm border border-gray-200">
+    
+    <!-- 왼쪽 사이드바 (기사 목록) -->
+    <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full bg-gray-50/50 flex-shrink-0">
+        <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
             <h2 class="font-bold text-gray-800 flex items-center">
                 <i class="w-4 h-4 mr-2 text-blue-500" data-lucide="newspaper"></i>
                 최신 요약 속보
             </h2>
         </div>
-        <div class="overflow-y-auto flex-1" id="news-list"></div>
+        
+        <!-- ⭐ 여기가 끊임없이 늘어나는 원인이었습니다. min-h-0 클래스를 추가해 박스 안에서만 예쁘게 스크롤 되도록 가뒀습니다! -->
+        <div class="overflow-y-auto flex-1 min-h-0 custom-scroll" id="news-list"></div>
     </aside>
     
-    <!-- 메인: 기사 본문 로드 공간 -->
+    <!-- 오른쪽 영역 (기사 본문) -->
     <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
-        <div class="p-6 md:p-10 overflow-y-auto h-full">
+        <!-- 오른쪽 본문 안에서도 내용이 길어지면 독립적으로 스크롤 작동 -->
+        <div class="overflow-y-auto flex-1 min-h-0 p-6 md:p-10 custom-scroll">
             <div class="max-w-3xl mx-auto" id="article-body">
                 <p class="text-gray-400 text-center mt-10">좌측에서 기사를 선택해주세요.</p>
             </div>
@@ -94,9 +109,7 @@
 </main>
 
 <script>
-    // ⚡ 번역 실행 로직 (오류 완전 개선)
     function translatePage(langCode) {
-        // [원본(한국어)으로 돌아갈 때] 구글 번역기 버그를 막기 위해 쿠키를 완전히 삭제하고 깔끔하게 찰나의 새로고침 진행
         if (langCode === 'ko') {
             document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
@@ -104,7 +117,6 @@
             return;
         }
 
-        // [영어나 중국어로 번역할 때] 새로고침 없이 부드럽게 즉각 트랜지션
         const selectEl = document.querySelector('.goog-te-combo');
         if (selectEl) {
             selectEl.value = langCode;
@@ -117,7 +129,6 @@
         }
     }
 
-    // ⚡ 홈 버튼 로직
     function goHome() {
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
@@ -125,15 +136,12 @@
         location.reload();
     }
 
-    // ⚡ 페이지 첫 로드: 목록 불러오기 & 보던 기사 유지
     document.addEventListener("DOMContentLoaded", async () => {
         await loadNewsList();
-
         const savedArticle = sessionStorage.getItem("currentNewsFilePath");
         if (savedArticle) { loadNews(savedArticle); }
     });
 
-    // ⚡ 분리된 목록 HTML 불러오기
     async function loadNewsList() {
         try {
             const response = await fetch('./news/news_list.html');
@@ -146,7 +154,6 @@
         }
     }
 
-    // ⚡ 기사 하나 불러오기 및 재번역 연동
     async function loadNews(filePath) {
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
@@ -165,7 +172,6 @@
             });
             lucide.createIcons();
 
-            // 만약 현재 영어/중국어로 번역된 상태에서 새 기사를 눌렀다면 자동으로 다시 번역 작동!
             const selectEl = document.querySelector('.goog-te-combo');
             if (selectEl && selectEl.value !== '' && selectEl.value !== 'ko') {
                 setTimeout(() => { selectEl.dispatchEvent(new Event('change', { bubbles: true })); }, 300); 
