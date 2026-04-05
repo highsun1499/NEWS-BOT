@@ -6,28 +6,39 @@
     <title>글로벌 속보</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- ⭐ [매우 중요] 번역기 설정(Init) 함수가 무조건 먼저 정의되어야 합니다! -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ko',
+                includedLanguages: 'ko,en,zh-CN'
+            }, 'google_translate_element');
+        }
+    </script>
+    <!-- ⭐ 그 다음 번역기를 불러와야 에러 없이 즉각적으로 화면 뒤에 번역 위젯이 만들어집니다. -->
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        /* [수정됨] 상단 여백 강제 생성 방지 */
         body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; min-height: 100vh; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* [수정됨] 구글 번역 상단 배너를 진짜 완벽하게 멸종시키는 CSS */
+        /* 구글 상단 배너 및 지저분한 팝업창 완벽 숨김 */
         iframe.skiptranslate, .goog-te-banner-frame { display: none !important; }
         .goog-tooltip, .goog-tooltip:hover { display: none !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; border: none !important; }
         
+        /* 번역 위젯을 투명하게 만들어 숨김 (display:none 을 쓰면 위젯이 생성되지 않음) */
         #google_translate_element { 
-            position: absolute !important;
-            width: 1px !important;
-            height: 1px !important;
-            overflow: hidden !important;
-            opacity: 0 !important;
-            top: -1000px !important;
-            left: -1000px !important;
-            z-index: -100 !important;
+            position: absolute;
+            width: 0px;
+            height: 0px;
+            overflow: hidden;
+            top: -9999px;
+            left: -9999px;
+            opacity: 0;
+            z-index: -100;
         }
     </style>
 </head>
@@ -54,11 +65,14 @@
         <span class="text-gray-300">|</span>
         <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('zh-CN')">中文</button>
     </div>
+    
+    <!-- 숨겨진 구글 번역 요소가 생성될 공간 -->
     <div id="google_translate_element"></div>
 </header>
 
 <!-- Main Content -->
 <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-6 bg-white rounded-xl shadow-sm border border-gray-200 h-[800px]">
+    <!-- 사이드바: 기사 목록 로드 공간 -->
     <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full overflow-hidden bg-gray-50/50">
         <div class="p-4 border-b border-gray-200 bg-white">
             <h2 class="font-bold text-gray-800 flex items-center">
@@ -66,11 +80,10 @@
                 최신 요약 속보
             </h2>
         </div>
-        
-        <!-- 기사 목록 들어오는 곳 -->
         <div class="overflow-y-auto flex-1" id="news-list"></div>
     </aside>
     
+    <!-- 메인: 기사 본문 로드 공간 -->
     <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         <div class="p-6 md:p-10 overflow-y-auto h-full">
             <div class="max-w-3xl mx-auto" id="article-body">
@@ -81,16 +94,9 @@
 </main>
 
 <script>
-    function googleTranslateElementInit() {
-        new google.translate.TranslateElement({
-            pageLanguage: 'ko',
-            includedLanguages: 'ko,en,zh-CN'
-        }, 'google_translate_element');
-    }
-
-    // ⚡ 번역 및 버그 방어 처리
+    // ⚡ 번역 실행 로직 (오류 완전 개선)
     function translatePage(langCode) {
-        // [핵심 변경] 한국어(원본)로 돌아갈 때는 구글 위젯 버그 방지를 위해 쿠키 포맷 리셋 후 찰나의 새로고침을 진행합니다.
+        // [원본(한국어)으로 돌아갈 때] 구글 번역기 버그를 막기 위해 쿠키를 완전히 삭제하고 깔끔하게 찰나의 새로고침 진행
         if (langCode === 'ko') {
             document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
@@ -98,39 +104,36 @@
             return;
         }
 
+        // [영어나 중국어로 번역할 때] 새로고침 없이 부드럽게 즉각 트랜지션
         const selectEl = document.querySelector('.goog-te-combo');
         if (selectEl) {
             selectEl.value = langCode;
             selectEl.dispatchEvent(new Event('change', { bubbles: true }));
         } else {
-            if (window.location.protocol === 'file:') {
-                alert("현재 보안상 구글 번역이 막히는 로컬(file://) 환경입니다.\n터미널에서[ python -m http.server ] 를 입력하고\n[ http://localhost:8000 ] 으로 접속해주세요!");
-            } else {
-                document.cookie = 'googtrans=/ko/' + langCode + '; path=/;';
-                location.reload(); 
-            }
+            console.error("번역 위젯 로드 지연 - 최후의 수단 사용");
+            document.cookie = 'googtrans=/ko/' + langCode + '; path=/;';
+            document.cookie = 'googtrans=/ko/' + langCode + '; domain=' + window.location.hostname + '; path=/;';
+            location.reload(); 
         }
     }
 
-    // 홈 버튼: 메모리까지 초기화하여 완벽한 빈 화면으로!
+    // ⚡ 홈 버튼 로직
     function goHome() {
-        // 읽고 있던 기사 번역 초기화 (한국어로 돌아가기)
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
         sessionStorage.removeItem("currentNewsFilePath");
         location.reload();
     }
 
-    // ⚡ 사이드바 목록과 이전 기사 불러오기
+    // ⚡ 페이지 첫 로드: 목록 불러오기 & 보던 기사 유지
     document.addEventListener("DOMContentLoaded", async () => {
         await loadNewsList();
 
         const savedArticle = sessionStorage.getItem("currentNewsFilePath");
-        if (savedArticle) { 
-            loadNews(savedArticle); 
-        }
+        if (savedArticle) { loadNews(savedArticle); }
     });
 
+    // ⚡ 분리된 목록 HTML 불러오기
     async function loadNewsList() {
         try {
             const response = await fetch('./news/news_list.html');
@@ -143,7 +146,7 @@
         }
     }
 
-    // 기사 본문 불러오기 및 재번역 감지
+    // ⚡ 기사 하나 불러오기 및 재번역 연동
     async function loadNews(filePath) {
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
@@ -162,7 +165,7 @@
             });
             lucide.createIcons();
 
-            // 외국어로 설정해둔 상태에서 새 기사 누르면 바로 다시 외국어로 변경해줌
+            // 만약 현재 영어/중국어로 번역된 상태에서 새 기사를 눌렀다면 자동으로 다시 번역 작동!
             const selectEl = document.querySelector('.goog-te-combo');
             if (selectEl && selectEl.value !== '' && selectEl.value !== 'ko') {
                 setTimeout(() => { selectEl.dispatchEvent(new Event('change', { bubbles: true })); }, 300); 
