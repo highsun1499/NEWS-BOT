@@ -108,66 +108,79 @@ def generate_post(news_group, country):
         print(f"AI 에러: {e}")
         return None
 
-# 왼쪽 사이드바 목록 생성
+# ⭐ [디자인 업그레이드] 구글 뉴스 스타일로 사이드바 목록 생성
 def update_news_list():
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
-    
     for file in post_files[:100]:
         filename = os.path.basename(file)
         parts = filename.replace(".html", "").split('_')
         
-        date_label = ""
-        time_label = "시간미상"
-        country_label = "NEWS"
+        formatted_date = "날짜 미상"
+        country_label = "글로벌"
 
         try:
+            # 1. 파일명에서 날짜를 파싱해 0을 뺀 깔끔한 "X월 X일" 형태로 가공
             if len(parts) >= 5:
                 date_val = parts[1]    
                 time_val = parts[2]    
                 country_label = parts[3] 
                 
-                date_label = f"{date_val[4:6]}/{date_val[6:8]}" 
-                time_label = f"{time_val[:2]}:{time_val[2:4]}"
-            elif len(parts) == 3:
-                time_val = parts[1]
-                country_label = parts[2]
-                time_label = f"{time_val[:2]}:{time_val[2:4]}"
-                
-            if not time_label.replace(":", "").isdigit():
-                time_label = "확인중"
-
-        except Exception as e:
+                year = date_val[0:4]
+                month = str(int(date_val[4:6]))
+                day = str(int(date_val[6:8]))
+                hour = time_val[0:2]
+                minute = time_val[2:4]
+                formatted_date = f"{year}년 {month}월 {day}일 {hour}:{minute}"
+        except Exception:
+            pass
+            
+        # 2. [특별 기능 추가] 파이썬이 생성된 HTML 파일을 뜯어서 실제 AI가 지은 핵심 제목을 목록에 노출
+        actual_title = f"[{country_label}] 분야별 핵심 속보 AI 요약"
+        try:
+            with open(file, "r", encoding="utf-8") as f_html:
+                soup = BeautifulSoup(f_html.read(), "html.parser")
+                h2_tag = soup.find("h2")
+                if h2_tag:
+                    actual_title = h2_tag.text.strip()
+        except Exception:
             pass
 
+        # 3. 요청하신 구글 뉴스 양식에 맞춘 HTML HTML 카드 구조
         links_html += f"""
-        <div class="p-4 border-b hover:bg-blue-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
-            <div class="flex justify-between items-start">
-                <span class="text-blue-500 text-[10px] font-bold uppercase">{country_label}</span>
-                <span class="text-gray-400 text-[10px]">{date_label}</span>
+        <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
+            <!-- 신문사 영역 -->
+            <div class="flex items-center space-x-1.5 mb-2">
+                <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5L18.5 7H20a2 2 0 012 2v9a2 2 0 01-2 2z"></path></svg>
+                <span class="text-[11px] font-bold text-gray-700">{country_label} 데스크</span>
             </div>
-            <h2 class="text-sm font-bold mt-1 line-clamp-2 group-hover:text-blue-700">
-                {time_label} - AI 요약 속보
+            
+            <!-- 기사 제목 영역 -->
+            <h2 class="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                {actual_title}
             </h2>
+            
+            <!-- 날짜 및 기자 영역 -->
+            <div class="mt-2.5 text-[11px] text-gray-500 font-medium">
+                {formatted_date} <span class="mx-1">·</span> AI 기자
+            </div>
         </div>
         """
     
     list_path = os.path.join("news", "news_list.html")
     with open(list_path, "w", encoding="utf-8") as f:
         f.write(links_html)
-    print("목록 파일(news_list.html) 갱신 완료!")
+    print("목록 디자인(news_list.html) 업그레이드 갱신 완료!")
 
-# 용량 관리
-def cleanup_old_news(max_files=200):
+def cleanup_old_news(max_files=150):
     all_files = sorted(glob.glob("news/post_*.html"), reverse=True)
-    
     files_to_delete = all_files[max_files:]
     for file_path in files_to_delete:
         try:
             os.remove(file_path)
             print(f"🗑️ 자동 삭제 완료: {os.path.basename(file_path)}")
         except Exception as e:
-            print(f"파일 삭제 에러 ({file_path}): {e}")
+            pass
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
