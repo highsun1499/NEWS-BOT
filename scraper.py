@@ -72,9 +72,9 @@ def generate_post(news_group, country):
             f"<h2>[{country} 속보] 핵심 제목</h2>\n<br>\n"
             f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
             f"<strong>링크 :</strong><br><br>\n"
-            f"1번<br><a href='URL' target='_blank'>기사 제목</a><br>\n"
-            f"2번<br><a href='URL' target='_blank'>기사 제목</a><br>\n"
-            f"3번<br><a href='URL' target='_blank'>기사 제목</a><br>\n\n"
+            f"1번<br><a href='URL' target='_blank'>기사 제목</a><br><br>\n"
+            f"2번<br><a href='URL' target='_blank'>기사 제목</a><br><br>\n"
+            f"3번<br><a href='URL' target='_blank'>기사 제목</a><br><br>\n\n"
             f"순수 HTML만 출력해."
         )
         
