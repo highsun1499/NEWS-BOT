@@ -66,7 +66,7 @@ def generate_post(news_group, country):
         return None
 
     try:
-        model="openai/gpt-4o"
+        model = "deepseek/DeepSeek-R1-0528"
         client = ChatCompletionsClient(
             endpoint="https://models.github.ai/inference",
             credential=AzureKeyCredential(token),
