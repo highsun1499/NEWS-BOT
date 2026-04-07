@@ -30,7 +30,7 @@ jobs:
         
       - name: Run News Bot
         env:
-          GEMINI_API: ${{ secrets.GEMINI_API }}
+          TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
         run: python scraper.py
         
       - name: Push results
