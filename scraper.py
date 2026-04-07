@@ -152,7 +152,7 @@ def update_news_list():
             <!-- 신문사 영역 -->
             <div class="flex items-center space-x-1.5 mb-2">
                 <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5L18.5 7H20a2 2 0 012 2v9a2 2 0 01-2 2z"></path></svg>
-                <span class="text-[11px] font-bold text-gray-700">{country_label} 데스크</span>
+                <span class="text-[11px] font-bold text-gray-700">{country_label} 속보</span>
             </div>
             
             <!-- 기사 제목 영역 -->
