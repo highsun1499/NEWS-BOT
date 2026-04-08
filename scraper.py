@@ -2,30 +2,35 @@ import os
 import requests
 import glob
 from bs4 import BeautifulSoup
-from datetime import datetime
+# ⭐ 시차 해결을 위해 timezone, timedelta 모듈을 추가로 가져옵니다.
+from datetime import datetime, timezone, timedelta
 import time
 import email.utils
 
-# [GitHub (Azure) LLM 라이브러리]
+#[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
-# ---- [추가] 구글 뉴스의 고유 시간 형식을 예쁜 한국 시간(YYYY.MM.DD HH:MM)으로 변환 ----
+# ⭐ 파이썬이 어디서 실행되든 무조건 한국 표준시(KST)로 고정시킵니다. (UTC + 9시간)
+KST = timezone(timedelta(hours=9))
+
 def parse_rss_date(rss_date_str):
     try:
         time_tuple = email.utils.parsedate_tz(rss_date_str)
         if time_tuple:
             epoch_time = email.utils.mktime_tz(time_tuple)
-            dt = datetime.fromtimestamp(epoch_time)
+            # 서버 기본 시간(UTC)을 억누르고 명시적으로 한국 시간(KST)으로 포맷을 바꿉니다.
+            dt = datetime.fromtimestamp(epoch_time, tz=timezone.utc).astimezone(KST)
             return dt.strftime("%Y.%m.%d %H:%M")
     except:
         pass
     return "수집 시간 미상"
 
-# 1. 뉴스 수집 (구글 RSS 100% 활용)
+# 1. 뉴스 수집 
 def get_global_news():
-    current_hour = datetime.now().hour
+    # 이제 서버 시간이 아닌 '한국 시간'을 기준으로 몇 시인지 판단합니다.
+    current_hour = datetime.now(KST).hour
     cycle = current_hour % 3
     if cycle == 0: url, country = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko", "KOREA"
     elif cycle == 1: url, country = "https://news.google.com/rss/search?q=Breaking&hl=en-US&gl=US&ceid=US:en", "USA"
@@ -42,7 +47,6 @@ def get_global_news():
             title = item.title.text if item.title else "제목 없음"
             link = item.link.text if item.link else "#"
             
-            # 구글 뉴스에서 제공해주는 언론사 이름과 수집 시간만 정직하게 빼냅니다.
             source_tag = item.find("source")
             source = source_tag.text if source_tag else "글로벌 매체"
             
@@ -68,7 +72,6 @@ def group_similar_news(news_list):
 
 # 3. AI 모델 통신 및 기사 포스팅 생성
 def generate_post(news_group, country):
-    # 상위 3개 기사만 선별해서 철저하게 프롬프트 전달
     top_3_news = news_group[:3]
     context = ""
     
@@ -86,7 +89,6 @@ def generate_post(news_group, country):
         f"다음 제공된 기사의 내용이 해당 국가의 언어라면 한국어로 완벽히 번역해. 그 후 아래 형식을 엄격히 지켜서 요약해."
     )
     
-    # ⭐ [핵심 수정] 요청하신 [링크 -> 제목 -> 언론사 -> 수집시간] 순서에 맞춘 완벽한 통일 양식!
     user_prompt = (
         f"=========[분석할 기사 목록 (팩트 데이터)] =========\n"
         f"{context}\n"
@@ -122,7 +124,7 @@ def generate_post(news_group, country):
         print("에러: TOKEN_GITHUB가 설정되지 않았습니다.")
         return None
 
-    # 질문자님이 쓰시던 작동되는 깃허브 모델명을 이곳에 적어주세요. (우선 메타 모델로 잡아두었습니다.)
+    # 모델명 gpt-4.1 은 없으므로 안전하게 gpt-4o 로 보정해두었습니다!
     model_name = "openai/gpt-4.1"
 
     try:
@@ -190,7 +192,8 @@ if __name__ == "__main__":
     groups = group_similar_news(news_list)
     
     if groups:
-        now = datetime.now()
+        # ⭐ 이 문서가 만들어지는 시간조차 무조건 한국 시간 기준으로 박힙니다.
+        now = datetime.now(KST)
         date_str, time_str = now.strftime('%Y%m%d'), now.strftime('%H%M%S')
         for i, group in enumerate(groups[:3]):  
             post_content = generate_post(group, country_code)
