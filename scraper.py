@@ -197,7 +197,7 @@ def generate_post(news_group, country):
         print("에러: TOKEN_GITHUB가 설정되지 않았습니다.")
         return None
 
-    model_name = "meta-llama/Llama-3.2-90B-Vision-Instruct"
+    model_name = "openai/gpt-4.1"
 
     try:
         client = ChatCompletionsClient(
