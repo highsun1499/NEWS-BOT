@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import time
 
-# [GitHub (Azure) LLM 라이브러리]
+#[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
@@ -65,8 +65,10 @@ def generate_post(news_group, country):
         print("에러: TOKEN_GITHUB가 설정되지 않았습니다.")
         return None
 
+    # ⭐ 에러 원천 차단! 변수를 try-except 바깥에 가장 먼저 안전하게 고정 선언했습니다.
+    model_name = "openai/gpt-5"
+
     try:
-        model = "deepseek/DeepSeek-R1-0528"
         client = ChatCompletionsClient(
             endpoint="https://models.github.ai/inference",
             credential=AzureKeyCredential(token),
@@ -82,6 +84,7 @@ def generate_post(news_group, country):
         
     except Exception as e:
         error_short = str(e).split('\n')[0][:80]
+        # 이제 에러가 나더라도 model_name이 이미 위에서 정의되어 있으므로 NameError 없이 깔끔하게 실패 사유를 알려줍니다.
         print(f"❌ [{model_name}] 통신 실패: {error_short}...")
         return None
 
@@ -141,4 +144,4 @@ if __name__ == "__main__":
                 time.sleep(1)
     
     update_news_list()
-    cleanup_old_news(max_files=100)
+    cleanup_old_news(max_files=150)
