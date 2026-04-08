@@ -23,7 +23,7 @@
         body { font-family: 'Inter', sans-serif; top: 0px !important; position: static !important; overflow: hidden; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* [수정됨] 구글 번역 잔여 팝업 및 호버 요소 완벽히 숨김 처리 */
+        /* 구글 번역 잔여 팝업 및 호버 요소 완벽히 숨김 처리 */
         iframe.skiptranslate, .goog-te-banner-frame { display: none !important; }
         .goog-tooltip, .goog-tooltip:hover, #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; border: none !important; }
@@ -41,7 +41,6 @@
 
 <!-- Header -->
 <header class="bg-white border-b border-gray-200 flex-shrink-0 px-6 py-4 flex items-center justify-between z-10">
-    <!-- 로고 영역 -->
     <div class="flex items-center space-x-3 cursor-pointer" onclick="goHome()">
         <div class="bg-blue-600 p-2 rounded-lg">
             <i class="w-6 h-6 text-white" data-lucide="globe"></i>
@@ -55,7 +54,6 @@
         </div>
     </div>
     
-    <!-- ⭐[핵심 변경] 번역 버튼 리스트에 구글번역 차단 속성(notranslate) 부착 -->
     <div class="notranslate flex items-center space-x-4 text-sm font-medium bg-gray-100 px-4 py-2 rounded-full border border-gray-200" translate="no">
         <button class="text-gray-600 hover:text-blue-600 transition" onclick="translatePage('ko')">한국어</button>
         <span class="text-gray-300">|</span>
@@ -69,7 +67,6 @@
 <!-- Main Content -->
 <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-4 bg-white rounded-xl shadow-sm border border-gray-200">
     
-    <!-- 왼쪽 사이드바 (기사 목록) -->
     <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full bg-white flex-shrink-0">
         <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
             <h2 class="font-bold text-gray-800 flex items-center">
@@ -78,13 +75,10 @@
             </h2>
         </div>
         
-        <!-- 기사 목록 자동 로드 구역 -->
         <div class="overflow-y-auto flex-1 min-h-0 custom-scroll" id="news-list">
- 
         </div>
     </aside>
     
-    <!-- 오른쪽 영역 (기사 본문) -->
     <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         <div class="overflow-y-auto flex-1 min-h-0 p-6 md:p-10 custom-scroll">
             <div class="max-w-3xl mx-auto" id="article-body">
@@ -103,7 +97,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadNewsList() {
         try {
-            // ⭐ [핵심 수정] 주소 뒤에 '?t=현재시간'을 붙여서 브라우저가 매번 "새로운 파일"인 줄 알고 무조건 새로 다운받게 만듭니다!
             const cacheBuster = new Date().getTime();
             const response = await fetch('./news/news_list.html?t=' + cacheBuster);
             
@@ -121,7 +114,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
             
-            // ⭐ [핵심 수정] 기사 본문도 수정될 수 있으므로 캐시를 무시하게 만듭니다.
             const cacheBuster = new Date().getTime();
             const response = await fetch(filePath + '?t=' + cacheBuster);
             
@@ -144,6 +136,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                 setTimeout(() => { selectEl.dispatchEvent(new Event('change', { bubbles: true })); }, 300); 
             }
         } catch (e) { console.error(e); }
+    }
+
+    function translatePage(langCode) {
+        if (langCode === 'ko') {
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
+            location.reload(); 
+            return;
+        }
+
+        const selectEl = document.querySelector('.goog-te-combo');
+        if (selectEl) {
+            selectEl.value = langCode;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+            document.cookie = 'googtrans=/ko/' + langCode + '; path=/;';
+            document.cookie = 'googtrans=/ko/' + langCode + '; domain=' + window.location.hostname + '; path=/;';
+            location.reload(); 
+        }
+    }
+
+    function goHome() {
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
+        sessionStorage.removeItem("currentNewsFilePath");
+        location.reload();
     }
 
     lucide.createIcons();
