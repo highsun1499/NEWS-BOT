@@ -145,7 +145,7 @@ def generate_post(news_group, country):
             f"제목: {n['title']}\n"
             f"링크: {n['link']}\n"
             f"언론사: {n['source']}\n"
-            f"등록: {final_pub_time}\n"
+            f"입력: {final_pub_time}\n"
             f"수정: {mod_time}\n"
             f"기자: {author}\n\n"
         )
@@ -168,21 +168,21 @@ def generate_post(news_group, country):
         f"1번<br>\n"
         f"<a href='[기사 1 링크]' target='_blank'>[기사 1 제목]</a><br>\n"
         f"[기사 1 언론사]<br>\n"
-        f"등록 [기사 1 입력 시간]<br>\n"
+        f"입력 [기사 1 입력 시간]<br>\n"
         f"수정 [기사 1 수정 시간]<br>\n"
         f"[기사 1 기자]<br><br>\n"
         
         f"2번<br>\n"
         f"<a href='[기사 2 링크]' target='_blank'>[기사 2 제목]</a><br>\n"
         f"[기사 2 언론사]<br>\n"
-        f"등록 [기사 2 입력 시간]<br>\n"
+        f"입력 [기사 2 입력 시간]<br>\n"
         f"수정 [기사 2 수정 시간]<br>\n"
         f"[기사 2 기자]<br><br>\n"
         
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
         f"[기사 3 언론사]<br>\n"
-        f"등록 [기사 3 입력 시간]<br>\n"
+        f"입력 [기사 3 입력 시간]<br>\n"
         f"수정 [기사 3 수정 시간]<br>\n"
         f"[기사 3 기자]<br><br>\n\n"
         
