@@ -2,17 +2,14 @@ import os
 import requests
 import glob
 from bs4 import BeautifulSoup
-# ⭐ 시차 해결을 위해 timezone, timedelta 모듈을 추가로 가져옵니다.
 from datetime import datetime, timezone, timedelta
 import time
 import email.utils
 
-#[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
-# ⭐ 파이썬이 어디서 실행되든 무조건 한국 표준시(KST)로 고정시킵니다. (UTC + 9시간)
 KST = timezone(timedelta(hours=9))
 
 def parse_rss_date(rss_date_str):
@@ -20,16 +17,13 @@ def parse_rss_date(rss_date_str):
         time_tuple = email.utils.parsedate_tz(rss_date_str)
         if time_tuple:
             epoch_time = email.utils.mktime_tz(time_tuple)
-            # 서버 기본 시간(UTC)을 억누르고 명시적으로 한국 시간(KST)으로 포맷을 바꿉니다.
             dt = datetime.fromtimestamp(epoch_time, tz=timezone.utc).astimezone(KST)
             return dt.strftime("%Y.%m.%d %H:%M")
     except:
         pass
     return "수집 시간 미상"
 
-# 1. 뉴스 수집 
 def get_global_news():
-    # 이제 서버 시간이 아닌 '한국 시간'을 기준으로 몇 시인지 판단합니다.
     current_hour = datetime.now(KST).hour
     cycle = current_hour % 3
     if cycle == 0: url, country = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko", "KOREA"
@@ -46,20 +40,16 @@ def get_global_news():
         for item in items[:100]:
             title = item.title.text if item.title else "제목 없음"
             link = item.link.text if item.link else "#"
-            
             source_tag = item.find("source")
             source = source_tag.text if source_tag else "글로벌 매체"
-            
             pub_date_tag = item.find("pubDate")
             rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else "수집 시간 미상"
-            
             news_data.append({"title": title, "link": link, "source": source, "rss_pub_date": rss_pub_date})
             
         return news_data, country
     except Exception as e:
         print(f"수집 에러: {e}"); return[], "ERROR"
 
-# 2. 그룹화 로직
 def group_similar_news(news_list):
     groups = {}
     for news in news_list:
@@ -70,11 +60,9 @@ def group_similar_news(news_list):
             groups[group_key].append(news)
     return sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
 
-# 3. AI 모델 통신 및 기사 포스팅 생성
 def generate_post(news_group, country):
     top_3_news = news_group[:3]
     context = ""
-    
     for i, n in enumerate(top_3_news):
         context += (
             f"----[기사 {i+1}] ----\n"
@@ -84,6 +72,16 @@ def generate_post(news_group, country):
             f"수집일시: {n['rss_pub_date']}\n\n"
         )
     
+    # ⭐ [핵심 추가] 국가명에 맞춰 출력할 이모지 타이틀을 지정
+    if country == "KOREA":
+        emoji_country = "🇰🇷 한국"
+    elif country == "USA":
+        emoji_country = "🇺🇸 미국"
+    elif country == "CHINA":
+        emoji_country = "🇨🇳 중국"
+    else:
+        emoji_country = f"🌐 {country}"
+
     system_prompt = (
         f"너는 글로벌 뉴스 전문 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
         f"다음 제공된 기사의 내용이 해당 국가의 언어라면 한국어로 완벽히 번역해. 그 후 아래 형식을 엄격히 지켜서 요약해."
@@ -94,7 +92,7 @@ def generate_post(news_group, country):
         f"{context}\n"
         f"======================================\n\n"
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
-        f"<h2>[{country} 속보] 핵심 내용을 15자 내외로 작성</h2>\n<br>\n"
+        f"<h2>[{emoji_country} 속보] 핵심 내용을 15자 내외로 작성</h2>\n<br>\n"
         f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
         f"<strong>링크 :</strong><br><br>\n"
         
@@ -111,7 +109,7 @@ def generate_post(news_group, country):
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
         f"[기사 3 언론사]<br>\n"
-        f"시간 [기사 3 수집일시]<br><br>\n\n"
+        f"시간[기사 3 수집일시]<br><br>\n\n"
         
         f"[매우 중요한 주의사항]\n"
         f"- 1, 2, 3번 링크 섹션에 기재하는 모든 기사 제목, 링크, 언론사, 수집일시 데이터는 내가 제공한 '[분석할 기사 목록]' 안에 있는 정보만을 그대로 복사 붙여넣기 해라.\n"
@@ -124,7 +122,6 @@ def generate_post(news_group, country):
         print("에러: TOKEN_GITHUB가 설정되지 않았습니다.")
         return None
 
-    # 모델명 gpt-4.1 은 없으므로 안전하게 gpt-4o 로 보정해두었습니다!
     model_name = "openai/gpt-4.1"
 
     try:
@@ -156,10 +153,20 @@ def update_news_list():
         try:
             if len(parts) >= 5:
                 year, month, day, hour, minute = parts[1][0:4], str(int(parts[1][4:6])), str(int(parts[1][6:8])), parts[2][0:2], parts[2][2:4]
-                country_label, formatted_date = f"{parts[3]}", f"{year}년 {month}월 {day}일 {hour}:{minute}"
+                country_label, formatted_date = parts[3], f"{year}년 {month}월 {day}일 {hour}:{minute}"
         except Exception: pass
             
-        actual_title = f"[{country_label}] 분야별 핵심 속보 AI 요약"
+        # ⭐ [핵심 추가] 왼쪽 목록의 말머리도 이모지로 변경!
+        if country_label == "KOREA":
+            display_label = "🇰🇷 한국 속보"
+        elif country_label == "USA":
+            display_label = "🇺🇸 미국 속보"
+        elif country_label == "CHINA":
+            display_label = "🇨🇳 중국 속보"
+        else:
+            display_label = f"🌐 {country_label} 속보"
+            
+        actual_title = f"[{display_label}] 분야별 핵심 속보 AI 요약"
         try:
             with open(file, "r", encoding="utf-8") as f_html:
                 soup = BeautifulSoup(f_html.read(), "html.parser")
@@ -171,7 +178,7 @@ def update_news_list():
         <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
             <div class="flex items-center space-x-1.5 mb-2">
                 <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5L18.5 7H20a2 2 0 012 2v9a2 2 0 01-2 2z"></path></svg>
-                <span class="text-[11px] font-bold text-gray-700">{country_label} 데스크</span>
+                <span class="text-[11px] font-bold text-gray-700">{display_label}</span>
             </div>
             <h2 class="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">{actual_title}</h2>
             <div class="mt-2.5 text-[11px] text-gray-500 font-medium">{formatted_date} <span class="mx-1">·</span> AI 기자</div>
@@ -192,7 +199,6 @@ if __name__ == "__main__":
     groups = group_similar_news(news_list)
     
     if groups:
-        # ⭐ 이 문서가 만들어지는 시간조차 무조건 한국 시간 기준으로 박힙니다.
         now = datetime.now(KST)
         date_str, time_str = now.strftime('%Y%m%d'), now.strftime('%H%M%S')
         for i, group in enumerate(groups[:3]):  
