@@ -172,7 +172,7 @@ def update_news_list():
                 <span class="text-[11px] font-bold text-gray-700">{country_label} 데스크</span>
             </div>
             <h2 class="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">{actual_title}</h2>
-            <div class="mt-2.5 text-[11px] text-gray-500 font-medium">{formatted_date} <span class="mx-1">·</span> AI 큐레이터</div>
+            <div class="mt-2.5 text-[11px] text-gray-500 font-medium">{formatted_date} <span class="mx-1">·</span> AI 기자</div>
         </div>
         """
     with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
