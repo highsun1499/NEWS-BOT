@@ -95,33 +95,7 @@
 </main>
 
 <script>
-    function translatePage(langCode) {
-        if (langCode === 'ko') {
-            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
-            location.reload(); 
-            return;
-        }
-
-        const selectEl = document.querySelector('.goog-te-combo');
-        if (selectEl) {
-            selectEl.value = langCode;
-            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-        } else {
-            document.cookie = 'googtrans=/ko/' + langCode + '; path=/;';
-            document.cookie = 'googtrans=/ko/' + langCode + '; domain=' + window.location.hostname + '; path=/;';
-            location.reload(); 
-        }
-    }
-
-    function goHome() {
-        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + window.location.hostname + '; path=/;';
-        sessionStorage.removeItem("currentNewsFilePath");
-        location.reload();
-    }
-
-    document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", async () => {
         await loadNewsList();
         const savedArticle = sessionStorage.getItem("currentNewsFilePath");
         if (savedArticle) { loadNews(savedArticle); }
@@ -129,22 +103,28 @@
 
     async function loadNewsList() {
         try {
-            const response = await fetch('./news/news_list.html');
+            // ⭐ [핵심 수정] 주소 뒤에 '?t=현재시간'을 붙여서 브라우저가 매번 "새로운 파일"인 줄 알고 무조건 새로 다운받게 만듭니다!
+            const cacheBuster = new Date().getTime();
+            const response = await fetch('./news/news_list.html?t=' + cacheBuster);
+            
             if (response.ok) {
                 const html = await response.text();
-                // html 문서가 비어있지 않으면 덮어씌움
                 if (html.trim() !== "") {
                     document.getElementById('news-list').innerHTML = html;
                 }
             }
-        } catch (e) { console.log("아직 파이썬 연동 전이거나 목록이 없습니다."); }
+        } catch (e) { console.log("목록 로드 실패", e); }
     }
 
     async function loadNews(filePath) {
-        if (filePath === '#') return; // 샘플 클릭 방지용
+        if (filePath === '#') return; 
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
-            const response = await fetch(filePath);
+            
+            // ⭐ [핵심 수정] 기사 본문도 수정될 수 있으므로 캐시를 무시하게 만듭니다.
+            const cacheBuster = new Date().getTime();
+            const response = await fetch(filePath + '?t=' + cacheBuster);
+            
             const html = await response.text();
             
             const parser = new DOMParser();
