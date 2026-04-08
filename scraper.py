@@ -66,7 +66,7 @@ def generate_post(news_group, country):
         return None
 
     # ⭐ 에러 원천 차단! 변수를 try-except 바깥에 가장 먼저 안전하게 고정 선언했습니다.
-    model_name = "openai/gpt-5"
+    model_name = "deepseek/DeepSeek-R1-0528"
 
     try:
         client = ChatCompletionsClient(
