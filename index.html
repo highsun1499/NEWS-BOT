@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- ⭐[이모지 라이브러리 탑재] 윈도우 환경에서도 강제로 국기를 예쁜 이미지로 변환합니다. -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js"></script>
+    <!-- ⭐[이모지 엔진 탑재] 윈도우 OS에서도 국기를 'KR' 글자가 아닌 예쁜 그림으로 강제 변환시켜줍니다! -->
+    <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@14.1.0/dist/twemoji.min.js"></script>
 
     <script type="text/javascript">
         function googleTranslateElementInit() {
@@ -36,12 +36,12 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* ⭐ [CSS 설정] 생성된 국기 이미지가 글자 높이에 딱 맞게 조절되도록 세팅합니다. */
+        /* ⭐ [CSS 설정] 치환된 국기 그림이 텍스트들과 예쁘게 줄을 잘 맞추도록 크기를 보정합니다. */
         img.emoji {
             height: 1.1em;
             width: 1.1em;
-            margin: 0 .05em 0 .1em;
-            vertical-align: -0.1em;
+            margin: 0 .1em 0 .1em;
+            vertical-align: -0.15em;
             display: inline-block;
         }
     </style>
@@ -76,7 +76,6 @@
 
 <!-- Main Content -->
 <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-4 bg-white rounded-xl shadow-sm border border-gray-200">
-    
     <!-- 왼쪽 사이드바 (기사 목록) -->
     <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full bg-white flex-shrink-0">
         <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
@@ -99,6 +98,13 @@
 </main>
 
 <script>
+    // ⭐ 트위터 이모지(그림) 엔진 구동용 공통 셋팅
+    const twemojiOptions = {
+        folder: 'svg',
+        ext: '.svg',
+        base: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/'
+    };
+
     document.addEventListener("DOMContentLoaded", async () => {
         await loadNewsList();
         const savedArticle = sessionStorage.getItem("currentNewsFilePath");
@@ -113,12 +119,12 @@
             if (response.ok) {
                 const html = await response.text();
                 if (html.trim() !== "") {
-                    document.getElementById('news-list').innerHTML = html;
+                    // HTML 삽입
+                    const listElement = document.getElementById('news-list');
+                    listElement.innerHTML = html;
                     
-                    // ⭐[이모지 강제 치환 실행] 왼쪽 목록에 나타난 KR, US 텍스트를 찾아 그림(국기)으로 모조리 바꿉니다.
-                    twemoji.parse(document.getElementById('news-list'), {
-                        base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
-                    });
+                    // ⭐ 목록에 적힌 이모지를 검색해서 국기 이미지로 완벽하게 덧칠합니다.
+                    if (window.twemoji) { twemoji.parse(listElement, twemojiOptions); }
                 }
             }
         } catch (e) { console.log("목록 로드 실패", e); }
@@ -128,20 +134,17 @@
         if (filePath === '#') return; 
         try {
             sessionStorage.setItem("currentNewsFilePath", filePath);
-            
             const cacheBuster = new Date().getTime();
             const response = await fetch(filePath + '?t=' + cacheBuster);
-            
             const html = await response.text();
             
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            document.getElementById('article-body').innerHTML = doc.body.innerHTML;
+            const bodyElement = document.getElementById('article-body');
+            bodyElement.innerHTML = doc.body.innerHTML;
             
-            // ⭐[이모지 강제 치환 실행] 오른쪽 기사 본문에 나타난 국기 글자도 그림으로 바꿉니다.
-            twemoji.parse(document.getElementById('article-body'), {
-                base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
-            });
+            // ⭐ 본문 우측 화면에 발생한 이모지(H2 제목 등)도 국기 이미지로 치환합니다.
+            if (window.twemoji) { twemoji.parse(bodyElement, twemojiOptions); }
             
             document.querySelectorAll('#news-list > div').forEach(div => {
                 div.classList.remove('bg-blue-50', 'border-l-4', 'border-l-blue-500');
