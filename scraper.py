@@ -108,7 +108,7 @@ def generate_post(news_group, country):
         f"{context}\n"
         f"======================================\n\n"
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
-        f"<h2>[{emoji_country} 속보] 핵심 내용을 100자 내외로 작성</h2>\n<br>\n"
+        f"<h2>[{emoji_country} 속보] 핵심 내용을 10자 내외로 작성</h2>\n<br>\n"
         f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
         f"<strong>링크 :</strong><br><br>\n"
         
