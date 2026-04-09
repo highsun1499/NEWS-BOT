@@ -25,13 +25,33 @@ def parse_rss_date(rss_date_str):
     return "수집 시간 미상"
 
 def get_global_news():
-    current_hour = datetime.now(KST).hour
-    cycle = current_hour % 3
-    if cycle == 0: url, country = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko", "KOREA"
-    elif cycle == 1: url, country = "https://news.google.com/rss/search?q=Breaking&hl=en-US&gl=US&ceid=US:en", "USA"
-    else: url, country = "https://news.google.com/rss/search?q=突发新闻&hl=zh-CN&gl=CN&ceid=CN:zh-hans", "CHINA"
+    # ⭐ [핵심 추가] 기존처럼 시간을 나누지 않고, 생성된 마지막 파일을 읽어서 다음 국가를 똑똑하게 결정합니다.
+    sequence =["KOREA", "USA", "CHINA"]
+    target_country = "KOREA" # 맨 처음 실행될 때의 기본값
+    
+    # news 폴더에 있는 파일들을 최신순으로 가져옵니다.
+    post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
+    if post_files:
+        latest_file = os.path.basename(post_files[0]) # 가장 최근에 만들어진 파일 예: post_20260409_151400_USA_0.html
+        parts = latest_file.replace(".html", "").split('_')
+        if len(parts) >= 4:
+            last_country = parts[3]
+            if last_country in sequence:
+                # 리스트에서 이전 국가의 다음 인덱스를 찾습니다. (마지막이면 다시 처음으로 0)
+                next_index = (sequence.index(last_country) + 1) % len(sequence)
+                target_country = sequence[next_index]
 
-    print(f"[{current_hour}시 정기 업데이트] {country} 뉴스 수집 시작...")
+    # 결정된 국가에 맞춰 URL 세팅
+    if target_country == "KOREA":
+        url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
+    elif target_country == "USA":
+        url = "https://news.google.com/rss/search?q=Breaking&hl=en-US&gl=US&ceid=US:en"
+    else:
+        url = "https://news.google.com/rss/search?q=突发新闻&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
+
+    now_str = datetime.now(KST).strftime('%H:%M')
+    print(f"[{now_str} 업데이트] 이전 기사 사이클 확인 완료. 이번 순서인 {target_country} 뉴스 수집을 시작합니다...")
+    
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "xml")
@@ -47,7 +67,7 @@ def get_global_news():
             rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else "수집 시간 미상"
             news_data.append({"title": title, "link": link, "source": source, "rss_pub_date": rss_pub_date})
             
-        return news_data, country
+        return news_data, target_country
     except Exception as e:
         print(f"수집 에러: {e}"); return[], "ERROR"
 
@@ -136,7 +156,7 @@ def generate_post(news_group, country):
         
     except Exception as e:
         error_short = str(e).split('\n')[0][:80]
-        print(f"❌ [{model_name}] 통신 실패: {error_short}...")
+        print(f"❌[{model_name}] 통신 실패: {error_short}...")
         return None
 
 def update_news_list():
@@ -157,7 +177,6 @@ def update_news_list():
         elif country_label == "CHINA": display_label = "🇨🇳 중국 속보"
         else: display_label = f"🌐 {country_label} 속보"
 
-        # ⭐ [핵심 추가] 파이썬이 리스트 제목을 만들 때, <h2> 태그 안에 있는 대괄호 '[...]' 부분을 깔끔하게 잘라냅니다!
         actual_title = "분야별 핵심 속보 AI 요약"
         try:
             with open(file, "r", encoding="utf-8") as f_html:
@@ -165,7 +184,6 @@ def update_news_list():
                 h2_tag = soup.find("h2")
                 if h2_tag: 
                     raw_title = h2_tag.text.strip()
-                    # 만약 제목에 ']' 기호가 있다면, 그 뒤쪽의 순수 텍스트만 분리해서 가져옵니다.
                     if "]" in raw_title:
                         actual_title = raw_title.split("]", 1)[1].strip()
                     else:
@@ -192,6 +210,7 @@ def cleanup_old_news(max_files=150):
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
+    # 바뀐 라우팅 로직 실행을 위해 함수 연동
     news_list, country_code = get_global_news()
     groups = group_similar_news(news_list)
     
