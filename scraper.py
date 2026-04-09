@@ -25,23 +25,19 @@ def parse_rss_date(rss_date_str):
     return "수집 시간 미상"
 
 def get_global_news():
-    # ⭐ [핵심 추가] 기존처럼 시간을 나누지 않고, 생성된 마지막 파일을 읽어서 다음 국가를 똑똑하게 결정합니다.
     sequence =["KOREA", "USA", "CHINA"]
-    target_country = "KOREA" # 맨 처음 실행될 때의 기본값
+    target_country = "KOREA" 
     
-    # news 폴더에 있는 파일들을 최신순으로 가져옵니다.
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     if post_files:
-        latest_file = os.path.basename(post_files[0]) # 가장 최근에 만들어진 파일 예: post_20260409_151400_USA_0.html
+        latest_file = os.path.basename(post_files[0]) 
         parts = latest_file.replace(".html", "").split('_')
         if len(parts) >= 4:
             last_country = parts[3]
             if last_country in sequence:
-                # 리스트에서 이전 국가의 다음 인덱스를 찾습니다. (마지막이면 다시 처음으로 0)
                 next_index = (sequence.index(last_country) + 1) % len(sequence)
                 target_country = sequence[next_index]
 
-    # 결정된 국가에 맞춰 URL 세팅
     if target_country == "KOREA":
         url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
     elif target_country == "USA":
@@ -77,7 +73,7 @@ def group_similar_news(news_list):
         words = news['title'].split()
         if len(words) > 1:
             group_key = " ".join(words[:2])
-            if group_key not in groups: groups[group_key] = []
+            if group_key not in groups: groups[group_key] =[]
             groups[group_key].append(news)
     return sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
 
@@ -103,13 +99,16 @@ def generate_post(news_group, country):
         f"다음 제공된 기사의 내용이 해당 국가의 언어라면 한국어로 완벽히 번역해. 그 후 아래 형식을 엄격히 지켜서 요약해."
     )
     
+    # ⭐[핵심 수정] 줄 수와 글자 수 조건을 출력 형식과 주의사항에 아주 강력하게 세팅했습니다.
     user_prompt = (
         f"=========[분석할 기사 목록 (팩트 데이터)] =========\n"
         f"{context}\n"
         f"======================================\n\n"
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
-        f"<h2>[{emoji_country} 속보] 핵심 내용을 10자 내외로 작성</h2>\n<br>\n"
-        f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
+        f"<h2>[{emoji_country} 속보] 10자 이내의 짧은 제목 작성</h2>\n<br>\n"
+        f"첫 번째 핵심 요약 문장입니다.<br>\n"
+        f"두 번째 핵심 요약 문장입니다.<br>\n"
+        f"세 번째 핵심 요약 문장입니다.<br><br>\n"
         f"<strong>링크 :</strong><br><br>\n"
         
         f"1번<br>\n"
@@ -125,9 +124,12 @@ def generate_post(news_group, country):
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
         f"[기사 3 언론사]<br>\n"
-        f"시간[기사 3 수집일시]<br><br>\n\n"
+        f"시간 [기사 3 수집일시]<br><br>\n\n"
         
         f"[매우 중요한 주의사항]\n"
+        f"- <h2> 태그 안의 제목은 '[{emoji_country} 속보]' 부분을 제외하고 절대 10글자를 초과하지 마라.\n"
+        f"- 요약 본문은 반드시 3줄(3문장) 이상으로 작성해라. 하지만 전체 본문 글자 수의 총합이 절대 100글자를 초과하지 않도록 매우 간결하고 명확하게 압축하라.\n"
+        f"- 각 요약 문장이 끝날 때마다 반드시 <br> 태그를 붙여서 줄바꿈을 해라.\n"
         f"- 1, 2, 3번 링크 섹션에 기재하는 모든 기사 제목, 링크, 언론사, 수집일시 데이터는 내가 제공한 '[분석할 기사 목록]' 안에 있는 정보만을 그대로 복사 붙여넣기 해라.\n"
         f"- 절대 임의로 데이터를 지어내거나 변형하지 마라.\n"
         f"- 코드 블럭(```html) 등은 제외하고 별도의 설명 없이 순수 HTML 구조만 출력할 것."
@@ -202,7 +204,7 @@ def update_news_list():
     with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
     print("목록 디자인(news_list.html) 갱신 완료!")
 
-def cleanup_old_news(max_files=150):
+def cleanup_old_news(max_files=100):
     for idx, file_path in enumerate(sorted(glob.glob("news/post_*.html"), reverse=True)):
         if idx >= max_files:
             try: os.remove(file_path)
