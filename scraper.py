@@ -11,7 +11,6 @@ from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
-
 KST = timezone(timedelta(hours=9))
 
 def parse_rss_date(rss_date_str):
@@ -42,13 +41,10 @@ def get_global_news():
         for item in items[:100]:
             title = item.title.text if item.title else "제목 없음"
             link = item.link.text if item.link else "#"
-            
             source_tag = item.find("source")
             source = source_tag.text if source_tag else "글로벌 매체"
-            
             pub_date_tag = item.find("pubDate")
             rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else "수집 시간 미상"
-            
             news_data.append({"title": title, "link": link, "source": source, "rss_pub_date": rss_pub_date})
             
         return news_data, country
@@ -77,15 +73,10 @@ def generate_post(news_group, country):
             f"수집일시: {n['rss_pub_date']}\n\n"
         )
     
-    # ⭐[핵심 추가] AI가 제목을 만들 때 영어(KOREA)가 아닌 한국어와 이모지를 결합하도록 설정
-    if country == "KOREA":
-        emoji_country = "🇰🇷 한국"
-    elif country == "USA":
-        emoji_country = "🇺🇸 미국"
-    elif country == "CHINA":
-        emoji_country = "🇨🇳 중국"
-    else:
-        emoji_country = f"🌐 {country}"
+    if country == "KOREA": emoji_country = "🇰🇷 한국"
+    elif country == "USA": emoji_country = "🇺🇸 미국"
+    elif country == "CHINA": emoji_country = "🇨🇳 중국"
+    else: emoji_country = f"🌐 {country}"
 
     system_prompt = (
         f"너는 글로벌 뉴스 전문 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
@@ -97,7 +88,6 @@ def generate_post(news_group, country):
         f"{context}\n"
         f"======================================\n\n"
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
-        # 이제 AI가 <h2>태그 안의 제목에 무조건 '국기'와 '한국어(한국/미국/중국)'를 집어넣습니다!
         f"<h2>[{emoji_country} 속보] 핵심 내용을 15자 내외로 작성</h2>\n<br>\n"
         f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
         f"<strong>링크 :</strong><br><br>\n"
@@ -115,7 +105,7 @@ def generate_post(news_group, country):
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
         f"[기사 3 언론사]<br>\n"
-        f"시간 [기사 3 수집일시]<br><br>\n\n"
+        f"시간[기사 3 수집일시]<br><br>\n\n"
         
         f"[매우 중요한 주의사항]\n"
         f"- 1, 2, 3번 링크 섹션에 기재하는 모든 기사 제목, 링크, 언론사, 수집일시 데이터는 내가 제공한 '[분석할 기사 목록]' 안에 있는 정보만을 그대로 복사 붙여넣기 해라.\n"
@@ -128,7 +118,6 @@ def generate_post(news_group, country):
         print("에러: TOKEN_GITHUB가 설정되지 않았습니다.")
         return None
 
-    # 질문자님이 설정하신 모델명입니다.
     model_name = "gpt-4o"
 
     try:
@@ -137,17 +126,17 @@ def generate_post(news_group, country):
             credential=AzureKeyCredential(token),
         )
 
-        print(f"🤖 GitHub AI [{model_name}] 모델 통신 시도 중...")
+        print(f"🤖 GitHub AI[{model_name}] 모델 통신 시도 중...")
         response = client.complete(
             messages=[SystemMessage(content=system_prompt), UserMessage(content=user_prompt)],
             model=model_name
         )
-        print(f"✅ 성공![{model_name}] 모델이 기사를 생성했습니다.")
+        print(f"✅ 성공! [{model_name}] 모델이 기사를 생성했습니다.")
         return response.choices[0].message.content.replace("```html", "").replace("```", "").strip()
         
     except Exception as e:
         error_short = str(e).split('\n')[0][:80]
-        print(f"❌[{model_name}] 통신 실패: {error_short}...")
+        print(f"❌ [{model_name}] 통신 실패: {error_short}...")
         return None
 
 def update_news_list():
@@ -160,25 +149,27 @@ def update_news_list():
         try:
             if len(parts) >= 5:
                 year, month, day, hour, minute = parts[1][0:4], str(int(parts[1][4:6])), str(int(parts[1][6:8])), parts[2][0:2], parts[2][2:4]
-                country_label, formatted_date = f"{parts[3]}", f"{year}년 {month}월 {day}일 {hour}:{minute}"
+                country_label, formatted_date = parts[3], f"{year}년 {month}월 {day}일 {hour}:{minute}"
         except Exception: pass
         
-        # ⭐[핵심 추가] 좌측 사이드바 리스트 화면의 맨 윗부분도 이모지와 한국어로 치환해서 띄워줍니다!
-        if country_label == "KOREA":
-            display_label = "🇰🇷 한국 속보"
-        elif country_label == "USA":
-            display_label = "🇺🇸 미국 속보"
-        elif country_label == "CHINA":
-            display_label = "🇨🇳 중국 속보"
-        else:
-            display_label = f"🌐 {country_label} 속보"
+        if country_label == "KOREA": display_label = "🇰🇷 한국 속보"
+        elif country_label == "USA": display_label = "🇺🇸 미국 속보"
+        elif country_label == "CHINA": display_label = "🇨🇳 중국 속보"
+        else: display_label = f"🌐 {country_label} 속보"
 
-        actual_title = f"[{display_label}] 분야별 핵심 속보 AI 요약"
+        # ⭐ [핵심 추가] 파이썬이 리스트 제목을 만들 때, <h2> 태그 안에 있는 대괄호 '[...]' 부분을 깔끔하게 잘라냅니다!
+        actual_title = "분야별 핵심 속보 AI 요약"
         try:
             with open(file, "r", encoding="utf-8") as f_html:
                 soup = BeautifulSoup(f_html.read(), "html.parser")
                 h2_tag = soup.find("h2")
-                if h2_tag: actual_title = h2_tag.text.strip()
+                if h2_tag: 
+                    raw_title = h2_tag.text.strip()
+                    # 만약 제목에 ']' 기호가 있다면, 그 뒤쪽의 순수 텍스트만 분리해서 가져옵니다.
+                    if "]" in raw_title:
+                        actual_title = raw_title.split("]", 1)[1].strip()
+                    else:
+                        actual_title = raw_title
         except Exception: pass
 
         links_html += f"""
