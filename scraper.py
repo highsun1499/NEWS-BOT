@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 import time
 import email.utils
-from difflib import SequenceMatcher
 
 #[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
@@ -50,7 +49,7 @@ def get_global_news():
     print(f"===================================================")
     print(f"🔄[{now_str} KST] 봇 가동 시작")
     print(f"🎯 [타겟 국가] 이전 사이클 확인 완료 -> 이번 수집 국가는 [{target_country}] 입니다.")
-    print(f"📡 [뉴스 수집] 구글 뉴스 RSS 접속 중...")
+    print(f"📡[뉴스 수집] 구글 뉴스 RSS 접속 중...")
     
     try:
         response = requests.get(url)
@@ -72,43 +71,35 @@ def get_global_news():
     except Exception as e:
         print(f"❌[수집 에러]: {e}"); return[], "ERROR"
 
-# ⭐특수문자 제거 과정을 빼고, 오직 "원본 제목"을 그대로 사용하여 60% 이상 유사도를 판별합니다.
+# ⭐[그룹핑 로직 수정] 복잡한 정규식 없이, 원본 기사 직통 "앞 10글자" 일치도로만 계산합니다!
 def group_similar_news(news_list):
-    print(f"🗂️ [그룹핑] 기사 원본 제목의 '문장 유사도(60% 이상)'를 계산하여 비슷한 기사들을 묶습니다...")
-    groups = []
+    print(f"🗂️ [그룹핑] 언어 상관없이 원본 제목의 '앞에서 10글자'가 동일하면 같은 핫이슈로 묶습니다...")
+    groups = {}
     
     for news in news_list:
         raw_title = news['title'].strip()
         if not raw_title: continue
-
-        added_to_group = False
         
-        for group in groups:
-            representative_title = group[0]['title'].strip()
+        # 순수하게 기사 제목의 맨 앞 10글자만 따서 그룹 키로 사용합니다.
+        group_key = raw_title[:10]
+        
+        if group_key not in groups:
+            groups[group_key] = []
+        groups[group_key].append(news)
             
-            # 원본 제목 텍스트 끼리 직접 유사도를 계산합니다.
-            similarity = SequenceMatcher(None, raw_title, representative_title).ratio()
-            
-            if similarity >= 0.60:
-                group.append(news)
-                added_to_group = True
-                break
-                
-        if not added_to_group:
-            groups.append([news])
-            
-    valid_groups = sorted([g for g in groups if len(g) >= 3], key=len, reverse=True)
+    # 기사가 3개 이상 중복된 그룹만 필터링합니다.
+    valid_groups = sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
     print(f"✅ [그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 총 {len(valid_groups)}개 발견")
     
     for i, g in enumerate(valid_groups[:3]):
-        print(f"   👉 순위 {i+1}: [ {g[0]['title'][:30]}... ] (관련 기사 {len(g)}개)")
+        print(f"   👉 순위 {i+1}:[ {g[0]['title'][:30]}... ] (관련 기사 {len(g)}개)")
 
     return valid_groups
 
 def generate_post(news_group, country):
     top_3_news = news_group[:3]
     
-    print(f"🚀 [AI 전송] 1순위 핫이슈 내에서 대표 기사 3개를 선별하여 AI에게 전송합니다.")
+    print(f"🚀[AI 전송] 1순위 핫이슈 내에서 대표 기사 3개를 선별하여 AI에게 전송합니다.")
     context = ""
     for i, n in enumerate(top_3_news):
         context += (
@@ -135,7 +126,9 @@ def generate_post(news_group, country):
         f"======================================\n\n"
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
         f"<h2>[{emoji_country} 속보] 핵심 내용을 10자 내외로 작성</h2>\n<br>\n"
-        f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
+        f"요약 문장 첫 번째입니다.<br>\n"
+        f"요약 문장 두 번째입니다.<br>\n"
+        f"요약 문장 세 번째입니다.<br><br><br>\n"
         f"<strong>링크 :</strong><br><br>\n"
         
         f"1번<br>\n"
@@ -146,7 +139,7 @@ def generate_post(news_group, country):
         f"2번<br>\n"
         f"<a href='[기사 2 링크]' target='_blank'>[기사 2 제목]</a><br>\n"
         f"[기사 2 언론사]<br>\n"
-        f"시간 [기사 2 수집일시]<br><br>\n"
+        f"시간[기사 2 수집일시]<br><br>\n"
         
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
@@ -155,8 +148,8 @@ def generate_post(news_group, country):
         
         f"[매우 중요한 주의사항]\n"
         f"- <h2> 태그 안의 제목은 '[{emoji_country} 속보]' 부분을 제외하고 절대 10글자를 초과하지 마라.\n"
-        f"- 요약 본문은 반드시 3줄(3문장) 이상으로 작성해라. 하지만 전체 본문 글자 수의 총합이 절대 100글자를 초과하지 않도록 매우 간결하고 명확하게 압축하라.\n"
-        f"- 각 요약 문장이 끝날 때마다 반드시 <br> 태그를 붙여서 줄바꿈을 해라.\n"
+        f"- 요약 본문은 반드시 3줄(3문장) 이상으로 작성해라. 전체 본문 글자 수 총합은 절대 100글자를 초과하지 않도록 압축하라.\n"
+        f"- 요약 본문 작성이 끝난 후, <strong>링크 :</strong> 텍스트가 나오기 직전에는 반드시 <br><br><br> 를 기입하여 시각적으로 확실한 빈 줄 여백을 강제로 만들어라.\n"
         f"- 1, 2, 3번 링크 섹션에 기재하는 모든 기사 제목, 링크, 언론사, 수집일시 데이터는 내가 제공한 '[분석할 기사 목록]' 안에 있는 정보만을 그대로 복사 붙여넣기 해라.\n"
         f"- 절대 임의로 데이터를 지어내거나 변형하지 마라.\n"
         f"- 코드 블럭(```html) 등은 제외하고 별도의 설명 없이 순수 HTML 구조만 출력할 것."
@@ -167,7 +160,7 @@ def generate_post(news_group, country):
         print("❌ [에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
         return None
 
-    # 질문자님이 검증하고 설정하신 모델명으로 100% 돌아갑니다!
+    # 직접 검증하여 설정해주신 소중한 모델명 (유지)
     model_name = "openai/gpt-4.1"
 
     try:
@@ -181,7 +174,7 @@ def generate_post(news_group, country):
             messages=[SystemMessage(content=system_prompt), UserMessage(content=user_prompt)],
             model=model_name
         )
-        print(f"✅ [답변 완료] {model_name} 모델이 성공적으로 기사를 요약했습니다!")
+        print(f"✅[답변 완료] {model_name} 모델이 성공적으로 기사를 요약했습니다!")
         return response.choices[0].message.content.replace("```html", "").replace("```", "").strip()
         
     except Exception as e:
@@ -224,6 +217,7 @@ def update_news_list():
         links_html += f"""
         <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
             <div class="flex items-center space-x-1.5 mb-2">
+                <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5L18.5 7H20a2 2 0 012 2v9a2 2 0 01-2 2z"></path></svg>
                 <span class="text-[11px] font-bold text-gray-700">{display_label}</span>
             </div>
             <h2 class="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">{actual_title}</h2>
@@ -268,4 +262,4 @@ if __name__ == "__main__":
     update_news_list()
     cleanup_old_news(max_files=100)
     print("===================================================")
-    print("🎉 [작업 완전 종료] 이번 시간의 모든 봇 자동화 작업이 성공적으로 끝났습니다!\n")
+    print("🎉[작업 완전 종료] 이번 시간의 모든 봇 자동화 작업이 성공적으로 끝났습니다!\n")
