@@ -73,9 +73,9 @@ def get_global_news():
     except Exception as e:
         print(f"❌[수집 에러]: {e}"); return[], "ERROR"
 
-# ⭐[그룹핑 로직 수정] 언론사 꼬리표 제거 & 순수 제목 유사도 60% 판별!
+# ⭐[그룹핑 로직 수정] 언론사 꼬리표 제거 & 순수 제목 유사도 50% 판별!
 def group_similar_news(news_list):
-    print(f"🗂️[그룹핑] 언론사 꼬리표를 제거한 순수 제목의 '유사도 60% 이상' 기준으로 기사들을 묶습니다...")
+    print(f"🗂️[그룹핑] 언론사 꼬리표를 제거한 순수 제목의 '유사도 50% 이상' 기준으로 기사들을 묶습니다...")
     groups =[]
     
     for news in news_list:
@@ -97,8 +97,8 @@ def group_similar_news(news_list):
             # 두 기사의 순수 제목끼리 텍스트 일치율을 계산합니다.
             similarity = SequenceMatcher(None, core_title, rep_core).ratio()
             
-            # 3. 일치율이 60%(0.60) 이상이면 같은 핫이슈로 간주하고 묶어버립니다.
-            if similarity >= 0.60:
+            # 3. 일치율이 50%(0.50) 이상이면 같은 핫이슈로 간주하고 묶어버립니다.
+            if similarity >= 0.50:
                 group.append(news)
                 added_to_group = True
                 break
