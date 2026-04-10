@@ -93,7 +93,7 @@ def group_similar_news(news_list):
             representative_title = re.sub(r'\[.*?\]|【.*?】|\(.*?\)|\-.*', '', group[0]['title'])
             representative_title = re.sub(r'[^\w\s]', '', representative_title).strip().lower()
             
-            # 글자가 약 40% 이상 일치하면 같은 사건(핫이슈)으로 간주합니다.
+            # 글자가 약 60% 이상 일치하면 같은 사건(핫이슈)으로 간주합니다.
             similarity = SequenceMatcher(None, clean_title, representative_title).ratio()
             
             if similarity >= 0.60:
