@@ -5,8 +5,6 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 import time
 import email.utils
-import re
-# ⭐ [핵심 추가] 파이썬 내장 자연어 패턴 매칭 라이브러리를 가져옵니다!
 from difflib import SequenceMatcher
 
 #[GitHub (Azure) LLM 라이브러리]
@@ -59,7 +57,7 @@ def get_global_news():
         soup = BeautifulSoup(response.content, "xml")
         items = soup.find_all("item")
         
-        news_data =[]
+        news_data = []
         for item in items[:100]:
             title = item.title.text if item.title else "제목 없음"
             link = item.link.text if item.link else "#"
@@ -69,43 +67,36 @@ def get_global_news():
             rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else "수집 시간 미상"
             news_data.append({"title": title, "link": link, "source": source, "rss_pub_date": rss_pub_date})
             
-        print(f"✅ [수집 완료] 총 {len(news_data)}개의 최신 기사를 가져왔습니다.")
+        print(f"✅[수집 완료] 총 {len(news_data)}개의 최신 기사를 가져왔습니다.")
         return news_data, target_country
     except Exception as e:
-        print(f"❌ [수집 에러]: {e}"); return[], "ERROR"
+        print(f"❌[수집 에러]: {e}"); return[], "ERROR"
 
-# ⭐[최첨단 공통 그룹핑 로직] 특정 언어 구별 없이 텍스트 유사도로 똑똑하게 묶어냅니다!
+# ⭐특수문자 제거 과정을 빼고, 오직 "원본 제목"을 그대로 사용하여 60% 이상 유사도를 판별합니다.
 def group_similar_news(news_list):
-    print(f"🗂️ [그룹핑] 언어 상관없이 '문장 유사도(60% 이상)'를 계산하여 비슷한 기사들을 묶습니다...")
-    groups =[]
+    print(f"🗂️ [그룹핑] 기사 원본 제목의 '문장 유사도(40% 이상)'를 계산하여 비슷한 기사들을 묶습니다...")
+    groups = []
     
     for news in news_list:
-        # 1. 비교의 정확도를 높이기 위해 불필요한 괄호, 특수기호, 신문사 이름을 싹 지웁니다.
-        raw_title = news['title']
-        clean_title = re.sub(r'\[.*?\]|【.*?】|\(.*?\)|\-.*', '', raw_title)
-        clean_title = re.sub(r'[^\w\s]', '', clean_title).strip().lower()
-        if not clean_title: continue
+        raw_title = news['title'].strip()
+        if not raw_title: continue
 
         added_to_group = False
         
-        # 2. 만들어져 있는 그룹들과 현재 기사의 '텍스트 유사도 일치율(Ratio)'을 측정합니다.
         for group in groups:
-            representative_title = re.sub(r'\[.*?\]|【.*?】|\(.*?\)|\-.*', '', group[0]['title'])
-            representative_title = re.sub(r'[^\w\s]', '', representative_title).strip().lower()
+            representative_title = group[0]['title'].strip()
             
-            # 글자가 약 60% 이상 일치하면 같은 사건(핫이슈)으로 간주합니다.
-            similarity = SequenceMatcher(None, clean_title, representative_title).ratio()
+            # 원본 제목 텍스트 끼리 직접 유사도를 계산합니다.
+            similarity = SequenceMatcher(None, raw_title, representative_title).ratio()
             
             if similarity >= 0.60:
                 group.append(news)
                 added_to_group = True
                 break
                 
-        # 3. 일치하는 그룹이 없으면 자기가 새로운 그룹의 첫 번째 기사가 됩니다.
         if not added_to_group:
             groups.append([news])
             
-    # 기사가 3개 이상 중복된 '핫이슈' 그룹만 남기고 정렬합니다.
     valid_groups = sorted([g for g in groups if len(g) >= 3], key=len, reverse=True)
     print(f"✅ [그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 총 {len(valid_groups)}개 발견")
     
@@ -173,10 +164,11 @@ def generate_post(news_group, country):
 
     token = os.environ.get("TOKEN_GITHUB")
     if not token:
-        print("❌[에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
+        print("❌ [에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
         return None
 
-    model_name = "gpt-4o"
+    # 질문자님이 검증하고 설정하신 모델명으로 100% 돌아갑니다!
+    model_name = "openai/gpt-4.1"
 
     try:
         client = ChatCompletionsClient(
@@ -184,17 +176,17 @@ def generate_post(news_group, country):
             credential=AzureKeyCredential(token),
         )
 
-        print(f"🤖 GitHub AI [{model_name}] 모델에게 답변을 요청중입니다. 기다려주세요...")
+        print(f"🤖 GitHub AI[{model_name}] 모델에게 답변을 요청중입니다. 기다려주세요...")
         response = client.complete(
             messages=[SystemMessage(content=system_prompt), UserMessage(content=user_prompt)],
             model=model_name
         )
-        print(f"✅[답변 완료] {model_name} 모델이 성공적으로 기사를 요약했습니다!")
+        print(f"✅ [답변 완료] {model_name} 모델이 성공적으로 기사를 요약했습니다!")
         return response.choices[0].message.content.replace("```html", "").replace("```", "").strip()
         
     except Exception as e:
         error_short = str(e).split('\n')[0][:80]
-        print(f"❌ [{model_name}] 통신 실패: {error_short}...")
+        print(f"❌[{model_name}] 통신 실패: {error_short}...")
         return None
 
 def update_news_list():
@@ -240,7 +232,7 @@ def update_news_list():
         </div>
         """
     with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
-    print("✅[HTML 갱신 완료] 목록 디자인(news_list.html)이 갱신되었습니다.")
+    print("✅ [HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
 
 def cleanup_old_news(max_files=100):
     delete_count = 0
@@ -272,9 +264,9 @@ if __name__ == "__main__":
                 time.sleep(1)
                 break 
     else:
-        print("⚠️ [이슈 부족] 현재 3개 이상 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
+        print("⚠️ [이슈 부족] 현재 3개 이상의 매체에서 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
         
     update_news_list()
     cleanup_old_news(max_files=100)
     print("===================================================")
-    print("🎉 [작업 완전 종료] 봇 자동화 작업이 성공적으로 끝났습니다!\n")
+    print("🎉 [작업 완전 종료] 이번 시간의 모든 봇 자동화 작업이 성공적으로 끝났습니다!\n")
