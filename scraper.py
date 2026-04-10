@@ -49,7 +49,7 @@ def get_global_news():
     now_str = datetime.now(KST).strftime('%H:%M')
     print(f"===================================================")
     print(f"🔄[{now_str} KST] 봇 가동 시작")
-    print(f"🎯 [타겟 국가] 이전 사이클 확인 완료 -> 이번 수집 국가는 [{target_country}] 입니다.")
+    print(f"🎯[타겟 국가] 이전 사이클 확인 완료 -> 이번 수집 국가는 [{target_country}] 입니다.")
     print(f"📡[뉴스 수집] 구글 뉴스 RSS 접속 중...")
     
     try:
@@ -74,7 +74,7 @@ def get_global_news():
 
 # ⭐[그룹핑 로직 수정] 복잡한 정규식 없이, 원본 기사 직통 "앞 10글자" 일치도로만 계산합니다!
 def group_similar_news(news_list):
-    print(f"🗂️ [그룹핑] 언어 상관없이 원본 제목의 '앞에서 10글자'가 동일하면 같은 핫이슈로 묶습니다...")
+    print(f"🗂️[그룹핑] 언어 상관없이 원본 제목의 '앞에서 10글자'가 동일하면 같은 핫이슈로 묶습니다...")
     groups = {}
     
     for news in news_list:
@@ -90,7 +90,7 @@ def group_similar_news(news_list):
             
     # 기사가 3개 이상 중복된 그룹만 필터링합니다.
     valid_groups = sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
-    print(f"✅ [그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 총 {len(valid_groups)}개 발견")
+    print(f"✅[그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 총 {len(valid_groups)}개 발견")
     
     for i, g in enumerate(valid_groups[:3]):
         print(f"   👉 순위 {i+1}:[ {g[0]['title'][:30]}... ] (관련 기사 {len(g)}개)")
@@ -159,7 +159,7 @@ def generate_post(news_group, country):
 
     token = os.environ.get("TOKEN_GITHUB")
     if not token:
-        print("❌ [에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
+        print("❌[에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
         return None
 
     # 직접 검증하여 설정해주신 소중한 모델명 (유지)
@@ -171,7 +171,7 @@ def generate_post(news_group, country):
             credential=AzureKeyCredential(token),
         )
 
-        print(f"🤖 GitHub AI[{model_name}] 모델에게 답변을 요청중입니다. 기다려주세요...")
+        print(f"🤖GitHub AI[{model_name}] 모델에게 답변을 요청중입니다. 기다려주세요...")
         response = client.complete(
             messages=[SystemMessage(content=system_prompt), UserMessage(content=user_prompt)],
             model=model_name
@@ -185,7 +185,7 @@ def generate_post(news_group, country):
         return None
 
 def update_news_list():
-    print(f"📝 [HTML 갱신] 좌측 사이드바 구조(news_list.html) 업데이트를 시작합니다.")
+    print(f"📝[HTML 갱신] 좌측 사이드바 구조(news_list.html) 업데이트를 시작합니다.")
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     for file in post_files[:100]:
@@ -226,7 +226,7 @@ def update_news_list():
         </div>
         """
     with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
-    print("✅ [HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
+    print("✅[HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
 
 def cleanup_old_news(max_files=100):
     delete_count = 0
@@ -237,7 +237,7 @@ def cleanup_old_news(max_files=100):
                 delete_count += 1
             except Exception: pass
     if delete_count > 0:
-        print(f"🗑️ [저장소 관리] 너무 오래된 기사 파일 {delete_count}개를 삭제하여 용량을 확보했습니다.")
+        print(f"🗑️[저장소 관리] 너무 오래된 기사 파일 {delete_count}개를 삭제하여 용량을 확보했습니다.")
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
@@ -258,7 +258,7 @@ if __name__ == "__main__":
                 time.sleep(1)
                 break 
     else:
-        print("⚠️ [이슈 부족] 현재 3개 이상의 매체에서 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
+        print("⚠️[이슈 부족] 현재 3개 이상의 매체에서 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
         
     update_news_list()
     cleanup_old_news(max_files=100)
