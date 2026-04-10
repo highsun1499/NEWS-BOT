@@ -74,7 +74,7 @@ def get_global_news():
 
 # ⭐특수문자 제거 과정을 빼고, 오직 "원본 제목"을 그대로 사용하여 60% 이상 유사도를 판별합니다.
 def group_similar_news(news_list):
-    print(f"🗂️ [그룹핑] 기사 원본 제목의 '문장 유사도(40% 이상)'를 계산하여 비슷한 기사들을 묶습니다...")
+    print(f"🗂️ [그룹핑] 기사 원본 제목의 '문장 유사도(60% 이상)'를 계산하여 비슷한 기사들을 묶습니다...")
     groups = []
     
     for news in news_list:
