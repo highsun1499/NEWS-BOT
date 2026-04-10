@@ -38,12 +38,13 @@ def get_global_news():
                 next_index = (sequence.index(last_country) + 1) % len(sequence)
                 target_country = sequence[next_index]
 
+   # ⭐ [강력한 시간 필터 장착] q=검색어 뒤에 '+when:7d'를 붙여 철저하게 최근 일주일 기사만 가져옵니다!
     if target_country == "KOREA":
-        url = "https://news.google.com/rss/search?q=속보&hl=ko&gl=KR&ceid=KR:ko"
+        url = "https://news.google.com/rss/search?q=속보+when:7d&hl=ko&gl=KR&ceid=KR:ko"
     elif target_country == "USA":
-        url = "https://news.google.com/rss/search?q=Breaking&hl=en-US&gl=US&ceid=US:en"
+        url = "https://news.google.com/rss/search?q=Breaking+when:7d&hl=en-US&gl=US&ceid=US:en"
     else:
-        url = "https://news.google.com/rss/search?q=突发新闻&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
+        url = "https://news.google.com/rss/search?q=突发新闻+when:7d&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
 
     now_str = datetime.now(KST).strftime('%H:%M')
     print(f"===================================================")
