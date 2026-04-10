@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 import time
 import email.utils
+import re  # ⭐ 괄호 및 특수문자 제거를 위해 정규식 라이브러리를 추가했습니다!
 
 #[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
@@ -46,17 +47,14 @@ def get_global_news():
         url = "https://news.google.com/rss/search?q=突发新闻&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
 
     now_str = datetime.now(KST).strftime('%H:%M')
-    print(f"===================================================")
-    print(f"🔄[{now_str} KST] 봇 가동 시작")
-    print(f"🎯 [타겟 국가] 이전 사이클 확인 완료 -> 이번 수집 국가는 [{target_country}] 입니다.")
-    print(f"📡 [뉴스 수집] 구글 뉴스 RSS 접속 중... ({url})")
+    print(f"[{now_str} 업데이트] {target_country} 뉴스 수집을 시작합니다...")
     
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "xml")
         items = soup.find_all("item")
         
-        news_data = []
+        news_data =[]
         for item in items[:100]:
             title = item.title.text if item.title else "제목 없음"
             link = item.link.text if item.link else "#"
@@ -66,46 +64,37 @@ def get_global_news():
             rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else "수집 시간 미상"
             news_data.append({"title": title, "link": link, "source": source, "rss_pub_date": rss_pub_date})
             
-        print(f"✅ [수집 완료] 총 {len(news_data)}개의 최신 기사를 가져왔습니다.")
-        
-        # 로그: 수집된 기사 샘플 (최상위 3개만 살짝 보여줌)
-        print(f"🔎 [수집 샘플 미리보기]")
-        for idx, sample in enumerate(news_data[:3]):
-            print(f"   {idx+1}. {sample['title'][:40]}...")
-
         return news_data, target_country
     except Exception as e:
-        print(f"❌ [수집 에러]: {e}"); return[], "ERROR"
+        print(f"수집 에러: {e}"); return[], "ERROR"
 
-def group_similar_news(news_list):
-    print(f"🗂️ [그룹핑] 겹치는 주제(핫이슈)를 파악하기 위해 비슷한 기사들을 묶습니다...")
+# ⭐ [핵심 수정: 중국어 묶음 오류 해결]
+def group_similar_news(news_list, target_country):
     groups = {}
     for news in news_list:
-        words = news['title'].split()
-        if len(words) > 1:
-            group_key = " ".join(words[:2])
-            if group_key not in groups: groups[group_key] = []
-            groups[group_key].append(news)
-            
-    # 기사가 3개 이상 중복된 '핫이슈' 그룹만 필터링 후, 기사 개수가 많은 순으로 정렬
-    valid_groups = sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
-    
-    print(f"✅ [그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 기사수 기준 총 {len(valid_groups)}개 발견")
-    
-    # 로그: 어떻게 그룹이 묶였는지 이름과 개수를 상위 3개까지 출력
-    for i, g in enumerate(valid_groups[:3]):
-        representative_title = g[0]['title'][:30]
-        print(f"   👉 순위 {i+1}: 그룹명 [ {representative_title}... ] (관련 기사 {len(g)}개)")
+        # 뉴스 제목에서 쓸데없는 특수기호, [속보], 【突发】 같은 괄호들을 싹 다 날리고 순수 글자만 남깁니다.
+        clean_title = re.sub(r'\[.*?\]|【.*?】|\(.*?\)|\-.*', '', news['title'])
+        clean_title = re.sub(r'[^\w\s]', '', clean_title).strip()
+        
+        if not clean_title: continue
 
+        # 중국어는 띄어쓰기가 없으므로 앞의 10글자가 일치하면 무조건 같은 뉴스(핫이슈)로 인식시킵니다.
+        if target_country == "CHINA":
+            group_key = clean_title[:10]
+        # 한국어, 영어는 기존처럼 앞의 2단어를 기준으로 자릅니다.
+        else:
+            words = clean_title.split()
+            group_key = " ".join(words[:2]) if len(words) > 1 else clean_title
+            
+        if group_key not in groups: groups[group_key] = []
+        groups[group_key].append(news)
+        
+    # 3개 이상 중복 보도된 가짜 아닌 "진짜 핫이슈"만 걸러냅니다.
+    valid_groups = sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
     return valid_groups
 
 def generate_post(news_group, country):
     top_3_news = news_group[:3]
-    
-    print(f"🚀 [AI 전송] 1순위 핫이슈 내에서 대표 기사 3개를 선별하여 AI에게 전송합니다.")
-    for i, n in enumerate(top_3_news):
-         print(f"   전송 {i+1}: [{n['source']}] {n['title'][:30]}...")
-
     context = ""
     for i, n in enumerate(top_3_news):
         context += (
@@ -126,13 +115,16 @@ def generate_post(news_group, country):
         f"다음 제공된 기사의 내용이 해당 국가의 언어라면 한국어로 완벽히 번역해. 그 후 아래 형식을 엄격히 지켜서 요약해."
     )
     
+    # ⭐ [핵심 수정: AI 바보 현상 차단]
     user_prompt = (
         f"=========[분석할 기사 목록 (팩트 데이터)] =========\n"
         f"{context}\n"
         f"======================================\n\n"
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
-        f"<h2>[{emoji_country} 속보] 핵심 내용을 10자 내외로 작성</h2>\n<br>\n"
-        f"요약 문단 (문장 끝마다 <br> 필수)\n<br>\n"
+        f"<h2>[{emoji_country} 속보] 실제 기사를 바탕으로 한 요약 제목</h2>\n<br>\n"
+        f"첫 번째 핵심 요약 문장입니다.<br>\n"
+        f"두 번째 핵심 요약 문장입니다.<br>\n"
+        f"세 번째 핵심 요약 문장입니다.<br><br>\n"
         f"<strong>링크 :</strong><br><br>\n"
         
         f"1번<br>\n"
@@ -148,19 +140,19 @@ def generate_post(news_group, country):
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
         f"[기사 3 언론사]<br>\n"
-        f"시간[기사 3 수집일시]<br><br>\n\n"
+        f"시간 [기사 3 수집일시]<br><br>\n\n"
         
         f"[매우 중요한 주의사항]\n"
-        f"- 요약 본문은 반드시 3줄(3문장) 이상으로 작성해라. 하지만 전체 본문 글자 수의 총합이 절대 100글자를 초과하지 않도록 매우 간결하고 명확하게 압축하라.\n"
-        f"- 각 요약 문장이 끝날 때마다 반드시 <br> 태그를 붙여서 줄바꿈을 해라.\n"
-        f"- 1, 2, 3번 링크 섹션에 기재하는 모든 기사 제목, 링크, 언론사, 수집일시 데이터는 내가 제공한 '[분석할 기사 목록]' 안에 있는 정보만을 그대로 복사 붙여넣기 해라.\n"
-        f"- 절대 임의로 데이터를 지어내거나 변형하지 마라.\n"
-        f"- 코드 블럭(```html) 등은 제외하고 별도의 설명 없이 순수 HTML 구조만 출력할 것."
+        f"- <h2> 태그 안에는 '실제 기사를 바탕으로 한 요약 제목' 이라는 글자를 절대 그대로 출력하지 마라! 반드시 네가 기사를 분석해서 새롭게 지어낸 '진짜 제목'으로 교체해서 써넣을 것.\n"
+        f"- 제목의 길이는 핵심만 담아 절대 10자를 초과하지 마라.\n"
+        f"- 요약 본문은 반드시 3줄(3문장) 이상으로 작성해라. 하지만 전체 본문 글자 수의 총합이 100글자를 초과하지 않도록 압축하라.\n"
+        f"- 1, 2, 3번 링크 섹션의[제목, 링크, 언론사, 수집일시] 데이터는 내가 제공한 '[분석할 기사 목록]' 안에 있는 원본 데이터만 그대로 복사 붙여넣기 해라.\n"
+        f"- 코드 블럭(```html) 등은 제외하고 별도의 설명 없이 오직 쓸 수 있는 순수 HTML 코드만 출력할 것."
     )
 
     token = os.environ.get("TOKEN_GITHUB")
     if not token:
-        print("❌ [에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
+        print("에러: TOKEN_GITHUB가 설정되지 않았습니다.")
         return None
 
     model_name = "gpt-4o"
@@ -171,12 +163,12 @@ def generate_post(news_group, country):
             credential=AzureKeyCredential(token),
         )
 
-        print(f"🤖 GitHub AI [{model_name}] 모델에게 답변을 요청중입니다. 기다려주세요...")
+        print(f"🤖 GitHub AI[{model_name}] 모델 통신 시도 중...")
         response = client.complete(
             messages=[SystemMessage(content=system_prompt), UserMessage(content=user_prompt)],
             model=model_name
         )
-        print(f"✅ [답변 완료] {model_name} 모델이 성공적으로 기사를 요약했습니다!")
+        print(f"✅ 성공! [{model_name}] 모델이 기사를 생성했습니다.")
         return response.choices[0].message.content.replace("```html", "").replace("```", "").strip()
         
     except Exception as e:
@@ -185,7 +177,6 @@ def generate_post(news_group, country):
         return None
 
 def update_news_list():
-    print(f"📝 [HTML 갱신] 좌측 사이드바 구조(news_list.html) 업데이트를 시작합니다.")
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     for file in post_files[:100]:
@@ -227,41 +218,34 @@ def update_news_list():
         </div>
         """
     with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
-    print("✅ [HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
+    print("목록 디자인(news_list.html) 갱신 완료!")
 
-def cleanup_old_news(max_files=150):
-    delete_count = 0
+def cleanup_old_news(max_files=100):
     for idx, file_path in enumerate(sorted(glob.glob("news/post_*.html"), reverse=True)):
         if idx >= max_files:
-            try: 
-                os.remove(file_path)
-                delete_count += 1
+            try: os.remove(file_path)
             except Exception: pass
-    if delete_count > 0:
-        print(f"🗑️[저장소 관리] 너무 오래된 기사 파일 {delete_count}개를 삭제하여 용량을 확보했습니다.")
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
     
-    news_list, country_code = get_global_news()
-    groups = group_similar_news(news_list)
+    news_list, target_country = get_global_news()
+    
+    # ⭐ [호출부 수정] 그룹을 묶을 때 이것이 중국어(CHINA)인지 아닌지 알려줍니다!
+    groups = group_similar_news(news_list, target_country)
     
     if groups:
         now = datetime.now(KST)
         date_str, time_str = now.strftime('%Y%m%d'), now.strftime('%H%M%S')
         for i, group in enumerate(groups[:3]):  
-            post_content = generate_post(group, country_code)
+            post_content = generate_post(group, target_country)
             if post_content:
-                file_name = f"news/post_{date_str}_{time_str}_{country_code}_0.html"
-                with open(file_name, "w", encoding="utf-8") as f:
+                with open(f"news/post_{date_str}_{time_str}_{target_country}_0.html", "w", encoding="utf-8") as f:
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
-                print(f"💾 [파일 저장] {file_name} 생성을 완료했습니다.")
                 time.sleep(1)
                 break 
     else:
-        print("⚠️ [이슈 부족] 현재 3개 이상의 매체에서 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
+        print("⚠️ 3곳 이상 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
         
     update_news_list()
     cleanup_old_news(max_files=100)
-    print("===================================================")
-    print("🎉 [작업 완전 종료] 이번 시간의 모든 봇 자동화 작업이 성공적으로 끝났습니다!\n")
