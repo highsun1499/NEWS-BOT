@@ -72,9 +72,9 @@ def get_global_news():
     except Exception as e:
         print(f"❌[수집 에러]: {e}"); return[], "ERROR"
 
-# ⭐[그룹핑 로직 수정] 복잡한 정규식 없이, 원본 기사 직통 "앞 10글자" 일치도로만 계산합니다!
+# ⭐[그룹핑 로직 수정] 복잡한 정규식 없이, 원본 기사 직통 "앞 100글자" 일치도로만 계산합니다!
 def group_similar_news(news_list):
-    print(f"🗂️[그룹핑] 언어 상관없이 원본 제목의 '앞에서 10글자'가 동일하면 같은 핫이슈로 묶습니다...")
+    print(f"🗂️[그룹핑] 언어 상관없이 원본 제목의 '앞에서 100글자'가 동일하면 같은 핫이슈로 묶습니다...")
     groups = {}
     
     for news in news_list:
@@ -82,7 +82,7 @@ def group_similar_news(news_list):
         if not raw_title: continue
         
         # 순수하게 기사 제목의 맨 앞 10글자만 따서 그룹 키로 사용합니다.
-        group_key = raw_title[:10]
+        group_key = raw_title[:100]
         
         if group_key not in groups:
             groups[group_key] = []
