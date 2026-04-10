@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 import time
 import email.utils
+from difflib import SequenceMatcher 
 
 #[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
@@ -72,31 +73,49 @@ def get_global_news():
     except Exception as e:
         print(f"❌[수집 에러]: {e}"); return[], "ERROR"
 
-# ⭐[그룹핑 로직 수정] 복잡한 정규식 없이, 원본 기사 직통 "앞 100글자" 일치도로만 계산합니다!
+# ⭐[그룹핑 로직 수정] 언론사 꼬리표 제거 & 순수 제목 유사도 60% 판별!
 def group_similar_news(news_list):
-    print(f"🗂️[그룹핑] 언어 상관없이 원본 제목의 '앞에서 100글자'가 동일하면 같은 핫이슈로 묶습니다...")
-    groups = {}
+    print(f"🗂️[그룹핑] 언론사 꼬리표를 제거한 순수 제목의 '유사도 60% 이상' 기준으로 기사들을 묶습니다...")
+    groups =[]
     
     for news in news_list:
         raw_title = news['title'].strip()
-        if not raw_title: continue
+        if not raw_title: 
+            continue
         
-        # 순수하게 기사 제목의 맨 앞 10글자만 따서 그룹 키로 사용합니다.
-        group_key = raw_title[:100]
+        # 1. 꼬리표 자르기: 구글 뉴스 특유의 ' - 언론사명'을 분리하여 앞부분(순수 제목)만 얻습니다.
+        core_title = raw_title.rsplit(' - ', 1)[0] if ' - ' in raw_title else raw_title
         
-        if group_key not in groups:
-            groups[group_key] = []
-        groups[group_key].append(news)
+        added_to_group = False
+        
+        # 2. 기존에 만들어진 그룹들과 하나씩 비교합니다.
+        for group in groups:
+            # 비교 대상 그룹의 대표 기사(첫 번째 기사) 제목도 꼬리표를 자릅니다.
+            rep_raw = group[0]['title']
+            rep_core = rep_raw.rsplit(' - ', 1)[0] if ' - ' in rep_raw else rep_raw
             
-    # 기사가 3개 이상 중복된 그룹만 필터링합니다.
-    valid_groups = sorted([g for g in groups.values() if len(g) >= 3], key=len, reverse=True)
+            # 두 기사의 순수 제목끼리 텍스트 일치율을 계산합니다.
+            similarity = SequenceMatcher(None, core_title, rep_core).ratio()
+            
+            # 3. 일치율이 60%(0.60) 이상이면 같은 핫이슈로 간주하고 묶어버립니다.
+            if similarity >= 0.60:
+                group.append(news)
+                added_to_group = True
+                break
+                
+        # 4. 어디에도 속하지 못한(60% 이상 안 겹치는) 새로운 기사면 새 방을 팝니다.
+        if not added_to_group:
+            groups.append([news])
+            
+    # 최종적으로 기사가 3개 이상 모인 것만 진짜 이슈로 필터링 후 덩치(길이)순 정렬합니다.
+    valid_groups = sorted([g for g in groups if len(g) >= 3], key=len, reverse=True)
     print(f"✅[그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 총 {len(valid_groups)}개 발견")
     
     for i, g in enumerate(valid_groups[:3]):
         print(f"   👉 순위 {i+1}:[ {g[0]['title'][:30]}... ] (관련 기사 {len(g)}개)")
 
     return valid_groups
-
+    
 def generate_post(news_group, country):
     top_3_news = news_group[:3]
     
