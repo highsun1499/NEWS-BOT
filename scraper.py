@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 import time
 import email.utils
-from difflib import SequenceMatcher 
+import re
+from difflib import SequenceMatcher
 
 #[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
@@ -15,18 +16,21 @@ from azure.core.credentials import AzureKeyCredential
 KST = timezone(timedelta(hours=9))
 
 def parse_rss_date(rss_date_str):
+    """RSS의 시간 포맷을 파싱하여 정렬을 위한 (datetime객체)와 (포맷팅 텍스트)를 동시에 반환합니다."""
     try:
         time_tuple = email.utils.parsedate_tz(rss_date_str)
         if time_tuple:
             epoch_time = email.utils.mktime_tz(time_tuple)
             dt = datetime.fromtimestamp(epoch_time, tz=timezone.utc).astimezone(KST)
-            return dt.strftime("%Y.%m.%d %H:%M")
+            return dt, dt.strftime("%Y.%m.%d %H:%M")
     except:
         pass
-    return "수집 시간 미상"
+    # 에러 및 파싱 실패 시, 최신순 정렬에서 맨 꼴찌로 밀려나도록 옛날 날짜 셋팅
+    return datetime(1970, 1, 1, tzinfo=KST), "수집 시간 미상"
 
+# 🔴 [로직 1단계 & 2단계] 수집 및 최신순 정렬
 def get_global_news():
-    sequence = ["KOREA", "USA", "CHINA"]
+    sequence =["KOREA", "USA", "CHINA"]
     target_country = "KOREA" 
     
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
@@ -39,7 +43,7 @@ def get_global_news():
                 next_index = (sequence.index(last_country) + 1) % len(sequence)
                 target_country = sequence[next_index]
 
-   # ⭐ [강력한 시간 필터 장착] q=검색어 뒤에 '+when:7d'를 붙여 철저하게 최근 일주일 기사만 가져옵니다!
+    # [로직 1] '속보' + 최근 7일(when:7d) 피드 연결 세팅
     if target_country == "KOREA":
         url = "https://news.google.com/rss/search?q=속보+when:7d&hl=ko&gl=KR&ceid=KR:ko"
     elif target_country == "USA":
@@ -49,9 +53,9 @@ def get_global_news():
 
     now_str = datetime.now(KST).strftime('%H:%M')
     print(f"===================================================")
-    print(f"🔄[{now_str} KST] 봇 가동 시작")
-    print(f"🎯[타겟 국가] 이전 사이클 확인 완료 -> 이번 수집 국가는 [{target_country}] 입니다.")
-    print(f"📡[뉴스 수집] 구글 뉴스 RSS 접속 중...")
+    print(f"🔄 [{now_str} KST] 봇 가동 시작")
+    print(f"🎯 [타겟 국가] 이번 수집 순서는 [{target_country}] 입니다.")
+    print(f"📡 [1단계] 구글 뉴스 RSS(최근 7일 제한) 최대 100개 확보 시도 중...")
     
     try:
         response = requests.get(url)
@@ -65,61 +69,116 @@ def get_global_news():
             source_tag = item.find("source")
             source = source_tag.text if source_tag else "글로벌 매체"
             pub_date_tag = item.find("pubDate")
-            rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else "수집 시간 미상"
-            news_data.append({"title": title, "link": link, "source": source, "rss_pub_date": rss_pub_date})
             
-        print(f"✅[수집 완료] 총 {len(news_data)}개의 최신 기사를 가져왔습니다.")
+            # 파싱된 datetime 객체를 통해 이따 '최신순 정렬'에 써먹을 예정입니다.
+            dt_obj, rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else (datetime(1970, 1, 1, tzinfo=KST), "수집 시간 미상")
+            
+            news_data.append({
+                "title": title, 
+                "link": link, 
+                "source": source, 
+                "rss_pub_date": rss_pub_date,
+                "dt_obj": dt_obj
+            })
+            
+        print(f"✅ [1단계 완료] 구글 뉴스 한도인 {len(news_data)}개의 최신 기사를 수집했습니다.")
+        
+        # [로직 2] 수집된 데이터를 즉시 최신 시간 기준으로 내림차순 정렬
+        print(f"🗂️ [2단계] 수집된 100개의 데이터를 '최신 발생 시간순'으로 정렬합니다...")
+        news_data.sort(key=lambda x: x['dt_obj'], reverse=True)
+        print(f"✅[2단계 완료] 최신순 정렬이 완벽하게 끝났습니다.")
+        
         return news_data, target_country
     except Exception as e:
-        print(f"❌[수집 에러]: {e}"); return[], "ERROR"
+        print(f"❌ [수집 에러]: {e}"); return[], "ERROR"
 
-# ⭐[그룹핑 로직 수정] 언론사 꼬리표 제거 & 순수 제목 유사도 50% 판별!
+# 🔴 [로직 3단계 & 4단계] 유사도 50% 그룹화 및 총량 정렬
 def group_similar_news(news_list):
-    print(f"🗂️[그룹핑] 언론사 꼬리표를 제거한 순수 제목의 '유사도 50% 이상' 기준으로 기사들을 묶습니다...")
+    print(f"🗂️ [3단계] 꼬리표를 제외한 순수 기사 제목 '50% 이상 유사도'를 기준으로 모든 기사를 그룹화합니다...")
     groups =[]
     
     for news in news_list:
         raw_title = news['title'].strip()
-        if not raw_title: 
-            continue
+        if not raw_title: continue
         
-        # 1. 꼬리표 자르기: 구글 뉴스 특유의 ' - 언론사명'을 분리하여 앞부분(순수 제목)만 얻습니다.
+        # 언론사 꼬리표( - 중앙일보 등)만 날려서 비교 확률을 높입니다.
         core_title = raw_title.rsplit(' - ', 1)[0] if ' - ' in raw_title else raw_title
         
         added_to_group = False
-        
-        # 2. 기존에 만들어진 그룹들과 하나씩 비교합니다.
         for group in groups:
-            # 비교 대상 그룹의 대표 기사(첫 번째 기사) 제목도 꼬리표를 자릅니다.
             rep_raw = group[0]['title']
             rep_core = rep_raw.rsplit(' - ', 1)[0] if ' - ' in rep_raw else rep_raw
             
-            # 두 기사의 순수 제목끼리 텍스트 일치율을 계산합니다.
             similarity = SequenceMatcher(None, core_title, rep_core).ratio()
             
-            # 3. 일치율이 50%(0.50) 이상이면 같은 핫이슈로 간주하고 묶어버립니다.
+            # [로직 3] 기준 50%를 조금이라도 넘기면 해당 그룹으로 묶습니다!
             if similarity >= 0.50:
                 group.append(news)
                 added_to_group = True
                 break
                 
-        # 4. 어디에도 속하지 못한(60% 이상 안 겹치는) 새로운 기사면 새 방을 팝니다.
+        # 유사도 50% 미만이라면 단 1개의 기사라도 무조건 자기가 속할 새로운 방(그룹)을 팝니다.
         if not added_to_group:
             groups.append([news])
             
-    # 최종적으로 기사가 3개 이상 모인 것만 진짜 이슈로 필터링 후 덩치(길이)순 정렬합니다.
-    valid_groups = sorted([g for g in groups if len(g) >= 3], key=len, reverse=True)
-    print(f"✅[그룹핑 완료] 3곳 이상 언론사에서 보도된 핫이슈 그룹: 총 {len(valid_groups)}개 발견")
+    # [로직 4] 생성된 모든 그룹을 기사 총량(크기) 기준으로 내림차순 정렬합니다!
+    print(f"🗂️ [4단계] 완료된 그룹들을 '기사가 많은 순위'대로 나란히 줄 세웁니다...")
+    sorted_groups = sorted(groups, key=len, reverse=True)
     
-    for i, g in enumerate(valid_groups[:3]):
-        print(f"   👉 순위 {i+1}:[ {g[0]['title'][:30]}... ] (관련 기사 {len(g)}개)")
+    print(f"✅ [3,4단계 완료] 단 1개의 기사도 버려짐 없이 총 {len(sorted_groups)}개의 그룹이 형성되었습니다.")
+    
+    # 봇이 로그에서 확인할 수 있도록 상위 5위권까지의 그룹 랭킹 상태를 출력합니다.
+    for i, g in enumerate(sorted_groups[:5]):
+        print(f"   👉 {i+1}위 그룹: [ {g[0]['title'][:30]}... ] (소속 기사: {len(g)}개)")
 
-    return valid_groups
+    return sorted_groups
+
+# 🔴 [로직 5단계] 1번 그룹 내 최신&다양성 필터 적용 후 3개 선별
+def filter_top_news(sorted_groups):
+    print(f"🎯 [5단계] 1위 그룹의 기사들을 최신순으로 다시 다듬고, '서로 다른 3개의 언론사' 기사를 조달합니다.")
     
-def generate_post(news_group, country):
-    top_3_news = news_group[:3]
+    selected_news =[]
+    unique_sources = set()
     
-    print(f"🚀[AI 전송] 1순위 핫이슈 내에서 대표 기사 3개를 선별하여 AI에게 전송합니다.")
+    try:
+        # 무조건 가장 기사가 많은 1위(인덱스 0) 그룹 선택
+        top_group = sorted_groups[0]
+        
+        # [로직 5.1] 그룹 안의 기사들을 다시 팩트 기반, 최신순으로 예쁘게 정렬합니다.
+        top_group.sort(key=lambda x: x['dt_obj'], reverse=True)
+        
+        #[로직 5.2] 위에서부터 꺼내면서 다른 언론사의 기사인지 교차 검증을 합니다.
+        for news in top_group:
+            if news['source'] not in unique_sources:
+                unique_sources.add(news['source'])
+                selected_news.append(news)
+                
+            # 3개가 모이면 즉시 스탑!
+            if len(selected_news) == 3:
+                break
+                
+        # (방어 조치) 1번 그룹이 온통 한 언론사 도배라 3개를 못 모았다면 빈자리를 순차적으로 채웁니다.
+        if len(selected_news) < 3:
+            print("⚠️ 1위 그룹 내 서로 다른 언론사가 부족하여 예비 기사를 추가 선별합니다.")
+            for news in top_group:
+                if news not in selected_news:
+                    selected_news.append(news)
+                if len(selected_news) == 3:
+                    break
+                    
+        print(f"✅ [5단계 완료] AI에게 보낼 완벽한 최신 기사 3개가 선별되었습니다.")
+        for idx, n in enumerate(selected_news):
+            print(f"   ✅ 발탁된 기사 {idx+1}: [{n['source']}] {n['title'][:20]}...")
+            
+    except Exception as e:
+        print(f"❌[필터링 실패]: {e}")
+
+    return selected_news
+
+# 🔴 [로직 6단계] AI 요약 명령 전송
+def generate_post(top_3_news, country):
+    print(f"🚀[6단계] 선별된 3개의 기사를 LLM에게 넘기고 요약을 명령을 전송합니다.")
+    
     context = ""
     for i, n in enumerate(top_3_news):
         context += (
@@ -146,7 +205,7 @@ def generate_post(news_group, country):
         f"==========\n\n"
         
         f"[출력 형식 (이 HTML 형식을 무조건 따를 것)]\n"
-        f"<h2>[{emoji_country} 속보] 핵심 내용을 10자 내외로 작성</h2><br>\n"
+        f"<h2>[{emoji_country} 속보] 핵심 내용을 100자 내외로 작성</h2><br>\n"
         f"요약 문장 첫 번째입니다.<br>\n"
         f"요약 문장 두 번째입니다.<br>\n"
         f"요약 문장 세 번째입니다.<br><br>\n"
@@ -184,23 +243,23 @@ def generate_post(news_group, country):
     # 직접 검증하여 설정해주신 소중한 모델명 (유지)
     model_name = "openai/gpt-4.1"
 
-    try:
+   try:
         client = ChatCompletionsClient(
             endpoint="https://models.github.ai/inference",
             credential=AzureKeyCredential(token),
         )
 
-        print(f"🤖GitHub AI[{model_name}] 모델에게 답변을 요청중입니다. 기다려주세요...")
+        print(f"🤖 GitHub AI [{model_name}] 통신 연결 중...")
         response = client.complete(
             messages=[SystemMessage(content=system_prompt), UserMessage(content=user_prompt)],
             model=model_name
         )
-        print(f"✅[답변 완료] {model_name} 모델이 성공적으로 기사를 요약했습니다!")
+        print(f"✅ [6단계 완료] {model_name} 가 성공적으로 요약을 조판했습니다!")
         return response.choices[0].message.content.replace("```html", "").replace("```", "").strip()
         
     except Exception as e:
         error_short = str(e).split('\n')[0][:80]
-        print(f"❌[{model_name}] 통신 실패: {error_short}...")
+        print(f"❌ [{model_name}] 통신 실패: {error_short}...")
         return None
 
 def update_news_list():
@@ -256,30 +315,37 @@ def cleanup_old_news(max_files=100):
                 delete_count += 1
             except Exception: pass
     if delete_count > 0:
-        print(f"🗑️[저장소 관리] 너무 오래된 기사 파일 {delete_count}개를 삭제하여 용량을 확보했습니다.")
+        print(f"🗑️ [저장소 관리] 낡은 기사 {delete_count}개를 삭제하여 용량을 확보했습니다.")
 
 if __name__ == "__main__":
     if not os.path.exists("news"): os.makedirs("news")
     
+    # [1단계 ~ 2단계] 
     news_list, target_country = get_global_news()
-    groups = group_similar_news(news_list)
     
-    if groups:
-        now = datetime.now(KST)
-        date_str, time_str = now.strftime('%Y%m%d'), now.strftime('%H%M%S')
-        for i, group in enumerate(groups[:3]):  
-            post_content = generate_post(group, target_country)
+    if news_list:
+        #[3단계 ~ 4단계]
+        sorted_groups = group_similar_news(news_list)
+        # [5단계] 
+        top_3_news = filter_top_news(sorted_groups)
+        
+        #[6단계] 
+        if top_3_news:
+            now = datetime.now(KST)
+            date_str, time_str = now.strftime('%Y%m%d'), now.strftime('%H%M%S')
+            
+            post_content = generate_post(top_3_news, target_country)
+            
             if post_content:
                 file_name = f"news/post_{date_str}_{time_str}_{target_country}_0.html"
                 with open(file_name, "w", encoding="utf-8") as f:
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
-                print(f"💾 [파일 저장] {file_name} 생성을 완료했습니다.")
+                print(f"💾[파일 저장] {file_name} 생성을 완료했습니다.")
                 time.sleep(1)
-                break 
-    else:
-        print("⚠️[이슈 부족] 현재 3개 이상의 매체에서 중복 보도된 핫이슈를 찾지 못하여 기사 생성을 건너뜁니다.")
-        
+        else:
+             print("⚠️ [이슈 부족] 요약할 의미 있는 기사가 부족하여 이번 자동화 명령을 스킵합니다.")
+             
     update_news_list()
     cleanup_old_news(max_files=100)
     print("===================================================")
-    print("🎉[작업 완전 종료] 이번 시간의 모든 봇 자동화 작업이 성공적으로 끝났습니다!\n")
+    print("🎉[모든 프로세스 종료] 이번 시간의 봇 자동화 작업이 성공적으로 끝났습니다!\n")
