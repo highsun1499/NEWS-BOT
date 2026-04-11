@@ -1,41 +1,71 @@
-name: News-Bot-Automation
+name: News-Bot-Jekyll-Automation
 
 on:
   schedule:
-    # 매시간 정각에 실행
     - cron: '0 * * * *'
   workflow_dispatch:
 
-# 여기에 전역 변수로 배치하면 모든 단계의 노드 경고가 사라집니다.
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
+# 제킬 배포를 위해 깃허브 권한을 확장합니다.
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build:
+  # 🔴 1단계: 파이썬 봇이 기사를 수집하고 코드를 짜서 깃허브에 저장합니다.
+  update_data:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4 
-      
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v5 
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          
       - name: Install dependencies
         run: pip install -r requirements.txt
-        
       - name: Run News Bot
         env:
           TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
         run: python scraper.py
-        
-      - name: Push results
+      - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update news posts" && git push)
+
+  # 🔴 2단계: 최신 기사가 저장되면, 제킬(Jekyll) 엔진이 HTML을 예쁘게 조립합니다.
+  build:
+    runs-on: ubuntu-latest
+    needs: update_data
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main # 방금 봇이 올린 최신 기사를 가져옵니다.
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  # 🔴 3단계: 조립된 웹사이트를 깃허브 서버에 실시간으로 발행(배포)합니다.
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
