@@ -243,7 +243,7 @@ def generate_post(top_3_news, country):
     # 직접 검증하여 설정해주신 소중한 모델명 (유지)
     model_name = "openai/gpt-4.1"
 
-   try:
+    try:
         client = ChatCompletionsClient(
             endpoint="https://models.github.ai/inference",
             credential=AzureKeyCredential(token),
