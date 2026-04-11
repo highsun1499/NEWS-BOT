@@ -33,12 +33,13 @@ def get_global_news():
     sequence =["KOREA", "USA", "CHINA"]
     target_country = "KOREA" 
     
-    post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
+    # ⭐ [변경됨] 폴더 감지 기준을 Jekyll 기준인 _posts 폴더로 변경했습니다!
+    post_files = sorted(glob.glob("_posts/*.md"), reverse=True)
     if post_files:
         latest_file = os.path.basename(post_files[0]) 
-        parts = latest_file.replace(".html", "").split('_')
-        if len(parts) >= 4:
-            last_country = parts[3]
+        parts = latest_file.replace(".md", "").split('-')
+        if len(parts) >= 5:
+            last_country = parts[4]
             if last_country in sequence:
                 next_index = (sequence.index(last_country) + 1) % len(sequence)
                 target_country = sequence[next_index]
@@ -108,7 +109,6 @@ def group_similar_news(news_list):
         for group in groups:
             rep_raw = group[0]['title']
             rep_core = rep_raw.rsplit(' - ', 1)[0] if ' - ' in rep_raw else rep_raw
-            
             similarity = SequenceMatcher(None, core_title, rep_core).ratio()
             
             # [로직 3] 기준 50%를 조금이라도 넘기면 해당 그룹으로 묶습니다!
@@ -262,90 +262,58 @@ def generate_post(top_3_news, country):
         print(f"❌ [{model_name}] 통신 실패: {error_short}...")
         return None
 
-def update_news_list():
-    print(f"📝 [HTML 갱신] 좌측 사이드바 구조(news_list.html) 업데이트를 시작합니다.")
-    post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
-    links_html = ""
-    for file in post_files[:100]:
-        filename = os.path.basename(file)
-        parts = filename.replace(".html", "").split('_')
-        formatted_date, country_label = "날짜 미상", "글로벌"
-        try:
-            if len(parts) >= 5:
-                year, month, day, hour, minute = parts[1][0:4], str(int(parts[1][4:6])), str(int(parts[1][6:8])), parts[2][0:2], parts[2][2:4]
-                country_label, formatted_date = parts[3], f"{year}년 {month}월 {day}일 {hour}:{minute}"
-        except Exception: pass
-        
-        if country_label == "KOREA": display_label = "🇰🇷 한국 속보"
-        elif country_label == "USA": display_label = "🇺🇸 미국 속보"
-        elif country_label == "CHINA": display_label = "🇨🇳 중국 속보"
-        else: display_label = f"🌐 {country_label} 속보"
-
-        actual_title = "분야별 핵심 속보 AI 요약"
-        try:
-            with open(file, "r", encoding="utf-8") as f_html:
-                soup = BeautifulSoup(f_html.read(), "html.parser")
-                h2_tag = soup.find("h2")
-                if h2_tag: 
-                    raw_title = h2_tag.text.strip()
-                    if "]" in raw_title:
-                        actual_title = raw_title.split("]", 1)[1].strip()
-                    else:
-                        actual_title = raw_title
-        except Exception: pass
-
-        links_html += f"""
-        <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group" onclick="loadNews('./news/{filename}')">
-            <div class="flex items-center space-x-1.5 mb-2">
-                <span class="text-[11px] font-bold text-gray-700">{display_label}</span>
-            </div>
-            <h2 class="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">{actual_title}</h2>
-            <div class="mt-2.5 text-[11px] text-gray-500 font-medium">{formatted_date} <span class="mx-1">·</span> AI 기자</div>
-        </div>
-        """
-    with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
-    print("✅ [HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
-
 def cleanup_old_news(max_files=100):
     delete_count = 0
-    for idx, file_path in enumerate(sorted(glob.glob("news/post_*.html"), reverse=True)):
+    # ⭐ [변경됨] 이전의 news 폴더가 아닌 언론사 공식 규격인 _posts 폴더를 관리합니다! 
+    for idx, file_path in enumerate(sorted(glob.glob("_posts/*.md"), reverse=True)):
         if idx >= max_files:
-            try: 
-                os.remove(file_path)
-                delete_count += 1
+            try: os.remove(file_path); delete_count += 1
             except Exception: pass
-    if delete_count > 0:
-        print(f"🗑️ [저장소 관리] 낡은 기사 {delete_count}개를 삭제하여 용량을 확보했습니다.")
 
 if __name__ == "__main__":
-    if not os.path.exists("news"): os.makedirs("news")
+    # ⭐ [변경됨] Jekyll 표준 저장소인 _posts 폴더를 만듭니다.
+    if not os.path.exists("_posts"): os.makedirs("_posts")
     
-    # [1단계 ~ 2단계] 
     news_list, target_country = get_global_news()
-    
     if news_list:
-        #[3단계 ~ 4단계]
         sorted_groups = group_similar_news(news_list)
-        # [5단계] 
         top_3_news = filter_top_news(sorted_groups)
         
-        #[6단계] 
         if top_3_news:
             now = datetime.now(KST)
-            date_str, time_str = now.strftime('%Y%m%d'), now.strftime('%H%M%S')
+            # ⭐ [핵심 변경] Jekyll의 엄격한 날짜 포맷 규칙(YYYY-MM-DD-제목.md)을 준수하여 설계합니다.
+            date_str = now.strftime('%Y-%m-%d')
+            time_str = now.strftime('%H%M%S')
             
             post_content = generate_post(top_3_news, target_country)
             
             if post_content:
-                file_name = f"news/post_{date_str}_{time_str}_{target_country}_0.html"
+                # AI가 생성한 <h2>안의 제목 텍스트만 빼서 구글 검색 잡히도록(Title) 적용
+                actual_title = f"{target_country} 속보"
+                try:
+                    soup = BeautifulSoup(post_content, "html.parser")
+                    h2_tag = soup.find("h2")
+                    if h2_tag: 
+                        raw_title = h2_tag.text.strip()
+                        actual_title = raw_title.split("]", 1)[1].strip() if "]" in raw_title else raw_title
+                except: pass
+
+                # ⭐ [가장 중요한 변경] HTML 파일이 아니라 Jekyll(블로그) 마크다운 문서를 만듭니다!
+                file_name = f"_posts/{date_str}-{time_str}-{target_country}.md"
+                
+                front_matter = f"""---
+layout: post
+title: "{actual_title}"
+date: {now.strftime('%Y-%m-%d %H:%M:%S')} +0900
+category: {target_country}
+---
+{post_content}
+"""
                 with open(file_name, "w", encoding="utf-8") as f:
-                    f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
-                print(f"💾 [파일 저장] {file_name} 생성을 완료했습니다.")
+                    f.write(front_matter)
+                    
+                print(f"💾 [블로그 포스팅 완료!] {file_name}")
                 time.sleep(1)
-        else:
-             print("⚠️ [이슈 부족] 요약할 의미 있는 기사가 부족하여 이번 자동화 명령을 스킵합니다.")
-             
-    update_news_list()
+                
+    # update_news_list() 함수는 완벽히 삭제되었습니다! (이제 깃허브 엔진이 알아서 해줍니다)
     cleanup_old_news(max_files=100)
-    print("===================================================")
-    print("🎉 [모든 프로세스 종료] 이번 시간의 봇 자동화 작업이 성공적으로 끝났습니다!\n")
