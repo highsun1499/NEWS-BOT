@@ -1,3 +1,4 @@
 title: 글로벌 속보 AI
 description: "AI가 요약해주는 실시간 글로벌 핫이슈 속보"
 theme: minima
+timezone: Asia/Seoul
