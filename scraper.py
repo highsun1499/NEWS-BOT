@@ -121,15 +121,18 @@ def group_similar_news(news_list):
         if not added_to_group:
             groups.append([news])
             
-    # [로직 4] 생성된 모든 그룹을 기사 총량(크기) 기준으로 내림차순 정렬합니다!
-    print(f"🗂️ [4단계] 완료된 그룹들을 '기사가 많은 순위'대로 나란히 줄 세웁니다...")
-    sorted_groups = sorted(groups, key=len, reverse=True)
+    # ⭐ [핵심 수정: 로직 4] 생성된 모든 그룹을 정렬합니다!
+    print(f"🗂️ [4단계] 완료된 그룹들을 '기사가 많은 순위' ➔ (동률 시) '가장 최신 기사가 포함된 순'으로 줄 세웁니다...")
+    
+    # 튜플 (len(g), max(시간))을 키로 주어, 1순위: 덩치큰 순, 2순위: 최신순으로 완벽하게 내림차순(reverse=True) 정렬합니다.
+    sorted_groups = sorted(groups, key=lambda g: (len(g), max(n['dt_obj'] for n in g)), reverse=True)
     
     print(f"✅ [3,4단계 완료] 단 1개의 기사도 버려짐 없이 총 {len(sorted_groups)}개의 그룹이 형성되었습니다.")
     
-    # 봇이 로그에서 확인할 수 있도록 상위 5위권까지의 그룹 랭킹 상태를 출력합니다.
+    # 봇이 로그에서 확인할 수 있도록 상위 5위권까지의 랭킹과 '가장 최신 보도 시간'을 출력합니다.
     for i, g in enumerate(sorted_groups[:5]):
-        print(f"   👉 {i+1}위 그룹: [ {g[0]['title'][:30]}... ] (소속 기사: {len(g)}개)")
+        latest_time_in_group = max(n['dt_obj'] for n in g).strftime('%m.%d %H:%M')
+        print(f"   👉 {i+1}위 그룹:[ {g[0]['title'][:30]}... ] (소속: {len(g)}개 / 최신보도: {latest_time_in_group})")
 
     return sorted_groups
 
