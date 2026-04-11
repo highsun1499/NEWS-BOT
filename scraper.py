@@ -86,7 +86,7 @@ def get_global_news():
         # [로직 2] 수집된 데이터를 즉시 최신 시간 기준으로 내림차순 정렬
         print(f"🗂️ [2단계] 수집된 100개의 데이터를 '최신 발생 시간순'으로 정렬합니다...")
         news_data.sort(key=lambda x: x['dt_obj'], reverse=True)
-        print(f"✅[2단계 완료] 최신순 정렬이 완벽하게 끝났습니다.")
+        print(f"✅ [2단계 완료] 최신순 정렬이 완벽하게 끝났습니다.")
         
         return news_data, target_country
     except Exception as e:
@@ -171,13 +171,13 @@ def filter_top_news(sorted_groups):
             print(f"   ✅ 발탁된 기사 {idx+1}: [{n['source']}] {n['title'][:20]}...")
             
     except Exception as e:
-        print(f"❌[필터링 실패]: {e}")
+        print(f"❌ [필터링 실패]: {e}")
 
     return selected_news
 
 # 🔴 [로직 6단계] AI 요약 명령 전송
 def generate_post(top_3_news, country):
-    print(f"🚀[6단계] 선별된 3개의 기사를 LLM에게 넘기고 요약을 명령을 전송합니다.")
+    print(f"🚀 [6단계] 선별된 3개의 기사를 LLM에게 넘기고 요약을 명령을 전송합니다.")
     
     context = ""
     for i, n in enumerate(top_3_news):
@@ -237,7 +237,7 @@ def generate_post(top_3_news, country):
 
     token = os.environ.get("TOKEN_GITHUB")
     if not token:
-        print("❌[에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
+        print("❌ [에러] TOKEN_GITHUB 환경변수가 설정되지 않았습니다.")
         return None
 
     # 직접 검증하여 설정해주신 소중한 모델명 (유지)
@@ -263,7 +263,7 @@ def generate_post(top_3_news, country):
         return None
 
 def update_news_list():
-    print(f"📝[HTML 갱신] 좌측 사이드바 구조(news_list.html) 업데이트를 시작합니다.")
+    print(f"📝 [HTML 갱신] 좌측 사이드바 구조(news_list.html) 업데이트를 시작합니다.")
     post_files = sorted(glob.glob("news/post_*.html"), reverse=True)
     links_html = ""
     for file in post_files[:100]:
@@ -304,7 +304,7 @@ def update_news_list():
         </div>
         """
     with open(os.path.join("news", "news_list.html"), "w", encoding="utf-8") as f: f.write(links_html)
-    print("✅[HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
+    print("✅ [HTML 갱신 완료] 목록 디자인(news_list.html)이 저장소에 갱신되었습니다.")
 
 def cleanup_old_news(max_files=100):
     delete_count = 0
@@ -340,7 +340,7 @@ if __name__ == "__main__":
                 file_name = f"news/post_{date_str}_{time_str}_{target_country}_0.html"
                 with open(file_name, "w", encoding="utf-8") as f:
                     f.write(f"<html><body style='line-height:2; padding:20px;'>{post_content}</body></html>")
-                print(f"💾[파일 저장] {file_name} 생성을 완료했습니다.")
+                print(f"💾 [파일 저장] {file_name} 생성을 완료했습니다.")
                 time.sleep(1)
         else:
              print("⚠️ [이슈 부족] 요약할 의미 있는 기사가 부족하여 이번 자동화 명령을 스킵합니다.")
@@ -348,4 +348,4 @@ if __name__ == "__main__":
     update_news_list()
     cleanup_old_news(max_files=100)
     print("===================================================")
-    print("🎉[모든 프로세스 종료] 이번 시간의 봇 자동화 작업이 성공적으로 끝났습니다!\n")
+    print("🎉 [모든 프로세스 종료] 이번 시간의 봇 자동화 작업이 성공적으로 끝났습니다!\n")
