@@ -7,6 +7,7 @@ import time
 import email.utils
 import re
 from difflib import SequenceMatcher
+from urllib.parse import urlparse
 
 #[GitHub (Azure) LLM 라이브러리]
 from azure.ai.inference import ChatCompletionsClient
@@ -65,14 +66,20 @@ def get_global_news():
             link = item.link.text if item.link else "#"
             source_tag = item.find("source")
             source = source_tag.text if source_tag else "글로벌 매체"
-            pub_date_tag = item.find("pubDate")
+
+            # ⭐ [핵심 추가] 언론사 원본 URL을 찾아서 '구글 파비콘 추출 API'와 결합하여 고해상도 아이콘을 만듭니다.
+            source_url = source_tag.get("url") if source_tag and source_tag.has_attr("url") else ""
+            domain = urlparse(source_url).netloc if source_url else ""
+            icon_url = f"https://www.google.com/s2/favicons?domain={domain}&sz=32" if domain else ""
             
+            pub_date_tag = item.find("pubDate")
             dt_obj, rss_pub_date = parse_rss_date(pub_date_tag.text) if pub_date_tag else (datetime(1970, 1, 1, tzinfo=KST), "수집 시간 미상")
             
             news_data.append({
                 "title": title, 
                 "link": link, 
                 "source": source, 
+                "icon_url": icon_url, # AI에게 넘겨주기 위해 딕셔너리에 아이콘 추가
                 "rss_pub_date": rss_pub_date,
                 "dt_obj": dt_obj
             })
@@ -164,6 +171,7 @@ def generate_post(top_3_news, country):
             f"제목: {n['title']}\n"
             f"링크: {n['link']}\n"
             f"언론사: {n['source']}\n"
+            f"아이콘: {n.get('icon_url', '')}\n"   # ⭐ AI에게 넘길 컨텍스트에도 아이콘 주소를 추가합니다.
             f"수집일시: {n['rss_pub_date']}\n\n"
         )
     
@@ -192,17 +200,17 @@ def generate_post(top_3_news, country):
         
         f"1번<br>\n"
         f"<a href='[기사 1 링크]' target='_blank'>[기사 1 제목]</a><br>\n"
-        f"[기사 1 언론사]<br>\n"
+        f"<img src='[기사 1 아이콘]' style='width:16px; height:16px; vertical-align:middle; display:inline-block; margin-right:4px; border-radius:2px;'>[기사 1 언론사]<br>\n"
         f"시간 [기사 1 수집일시]<br><br>\n"
         
         f"2번<br>\n"
         f"<a href='[기사 2 링크]' target='_blank'>[기사 2 제목]</a><br>\n"
-        f"[기사 2 언론사]<br>\n"
+        f"<img src='[기사 2 아이콘]' style='width:16px; height:16px; vertical-align:middle; display:inline-block; margin-right:4px; border-radius:2px;'>[기사 2 언론사]<br>\n"
         f"시간 [기사 2 수집일시]<br><br>\n"
         
         f"3번<br>\n"
         f"<a href='[기사 3 링크]' target='_blank'>[기사 3 제목]</a><br>\n"
-        f"[기사 3 언론사]<br>\n"
+        f"<img src='[기사 3 아이콘]' style='width:16px; height:16px; vertical-align:middle; display:inline-block; margin-right:4px; border-radius:2px;'>[기사 3 언론사]<br>\n"
         f"시간 [기사 3 수집일시]<br><br>\n"
         
         f"[매우 중요한 주의사항]\n"
