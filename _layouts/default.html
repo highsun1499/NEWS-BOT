@@ -62,9 +62,9 @@
         <div class="overflow-y-auto flex-1 min-h-0 custom-scroll" id="news-list">
             {% for post in site.posts limit:100 %}
               {% assign flag = "🌐 글로벌 속보" %}
-              {% if post.category == "KOREA" %}{% assign flag = "🇰🇷 한국 속보" %}{% endif %}
+              {% if post.category == "KOR" %}{% assign flag = "🇰🇷 한국 속보" %}{% endif %}
               {% if post.category == "USA" %}{% assign flag = "🇺🇸 미국 속보" %}{% endif %}
-              {% if post.category == "CHINA" %}{% assign flag = "🇨🇳 중국 속보" %}{% endif %}
+              {% if post.category == "CHN" %}{% assign flag = "🇨🇳 중국 속보" %}{% endif %}
               
               <!-- 현재 보고있는 기사면 파란불이 들어오도록 알아서 클래스를 붙입니다 -->
               <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group {% if page.url == post.url %}bg-blue-50 border-l-4 border-l-blue-500{% endif %}" onclick="location.href='{{ post.url | relative_url }}'">
