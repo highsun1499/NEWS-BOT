@@ -95,7 +95,7 @@ def get_global_news():
         print(f"❌ [수집 에러]: {e}"); return[], "ERROR"
 
 def group_similar_news(news_list):
-    print(f"🗂️ [3단계] 꼬리표를 제외한 순수 기사 제목 '30% 이상 유사도'를 기준으로 모든 기사를 그룹화합니다...")
+    print(f"🗂️ [3단계] 언론사명과 분류 단어를 제외한 기사 제목 유사도를 기준으로 모든 기사를 그룹화합니다...")
     groups =[]
     
     for news in news_list:
@@ -103,14 +103,19 @@ def group_similar_news(news_list):
         if not raw_title: continue
         
         core_title = raw_title.rsplit(' - ', 1)[0] if ' - ' in raw_title else raw_title
-        
+
+        core_title = re.sub(r'(?i)(속보|breaking|快讯)', '', core_title).strip()
+
         added_to_group = False
         for group in groups:
             rep_raw = group[0]['title']
+            
             rep_core = rep_raw.rsplit(' - ', 1)[0] if ' - ' in rep_raw else rep_raw
+            rep_core = re.sub(r'(?i)(속보|breaking|快讯)', '', rep_core).strip()
+
             similarity = SequenceMatcher(None, core_title, rep_core).ratio()
             
-            if similarity >= 0.30:
+            if similarity >= 0.50:
                 group.append(news)
                 added_to_group = True
                 break
@@ -122,9 +127,9 @@ def group_similar_news(news_list):
     sorted_groups = sorted(groups, key=lambda g: (len(g), max(n['dt_obj'] for n in g)), reverse=True)
     print(f"✅ [3,4단계 완료] 단 1개의 기사도 버려짐 없이 총 {len(sorted_groups)}개의 그룹이 형성되었습니다.")
     
-    for i, g in enumerate(sorted_groups[:5]):
+    for i, g in enumerate(sorted_groups[:10]):
         latest_time_in_group = max(n['dt_obj'] for n in g).strftime('%m.%d %H:%M')
-        print(f"   👉 {i+1}위 그룹:[ {g[0]['title'][:30]}... ] (소속: {len(g)}개 / 최신보도: {latest_time_in_group})")
+        print(f"   👉 {i+1}위 그룹:[ {g[0]['title'][:100]}... ] (소속: {len(g)}개 / 최신보도: {latest_time_in_group})")
 
     return sorted_groups
 
