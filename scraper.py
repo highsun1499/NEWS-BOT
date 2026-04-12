@@ -115,7 +115,7 @@ def group_similar_news(news_list):
 
             similarity = SequenceMatcher(None, core_title, rep_core).ratio()
             
-            if similarity >= 0.50:
+            if similarity >= 0.40:
                 group.append(news)
                 added_to_group = True
                 break
