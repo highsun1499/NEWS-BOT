@@ -95,7 +95,7 @@ def get_global_news():
         print(f"❌ [수집 에러]: {e}"); return[], "ERROR"
 
 def group_similar_news(news_list):
-    print(f"🗂️ [3단계] 언론사명과 분류 단어를 제외한 기사 제목 유사도를 기준으로 모든 기사를 그룹화합니다...")
+    print(f"🗂️ [3단계] 언론사명과 분류 단어를 제외하고 문장만 남겨서 기사 제목 유사도를 기준으로 모든 기사를 그룹화합니다...")
     groups =[]
     
     for news in news_list:
@@ -103,8 +103,8 @@ def group_similar_news(news_list):
         if not raw_title: continue
         
         core_title = raw_title.rsplit(' - ', 1)[0] if ' - ' in raw_title else raw_title
-
         core_title = re.sub(r'(?i)(속보|breaking|快讯)', '', core_title).strip()
+        core_title = "".join(char for char in core_title if char.isalnum())
 
         added_to_group = False
         for group in groups:
@@ -112,10 +112,11 @@ def group_similar_news(news_list):
             
             rep_core = rep_raw.rsplit(' - ', 1)[0] if ' - ' in rep_raw else rep_raw
             rep_core = re.sub(r'(?i)(속보|breaking|快讯)', '', rep_core).strip()
+            rep_core = "".join(char for char in rep_core if char.isalnum())
 
             similarity = SequenceMatcher(None, core_title, rep_core).ratio()
             
-            if similarity >= 0.50:
+            if similarity >= 0.60:
                 group.append(news)
                 added_to_group = True
                 break
