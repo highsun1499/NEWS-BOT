@@ -43,11 +43,11 @@ def get_global_news():
                 target_country = sequence[next_index]
 
     if target_country == "KOR":
-        url = "https://news.google.com/rss/search?q=속보+when:7d&hl=ko&gl=KR&ceid=KR:ko"
+        url = "https://news.google.com/rss/search?q=속보+when:2h&hl=ko&gl=KR&ceid=KR:ko"
     elif target_country == "USA":
-        url = "https://news.google.com/rss/search?q=Breaking+when:7d&hl=en-US&gl=US&ceid=US:en"
+        url = "https://news.google.com/rss/search?q=Breaking+when:2h&hl=en-US&gl=US&ceid=US:en"
     else:
-        url = "https://news.google.com/rss/search?q=快讯+when:7d&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
+        url = "https://news.google.com/rss/search?q=快讯+when:2h&hl=zh-CN&gl=CN&ceid=CN:zh-hans"
 
     now_str = datetime.now(KST).strftime('%H:%M')
     print(f"===================================================")
