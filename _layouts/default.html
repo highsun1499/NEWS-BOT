@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <!-- 구글 봇이 각각의 기사 제목을 인식하게 해줍니다! -->
     <title>{{ page.title }} | 글로벌 속보</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -34,6 +33,7 @@
 
 <body class="bg-gray-50 flex flex-col h-screen">
 
+<!-- 헤더 메뉴 -->
 <header class="bg-white border-b border-gray-200 flex-shrink-0 px-6 py-4 flex items-center justify-between z-10">
     <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='{{ site.baseurl }}/'">
         <div class="bg-blue-600 p-2 rounded-lg"><i class="w-6 h-6 text-white" data-lucide="globe"></i></div>
@@ -54,7 +54,7 @@
 </header>
 
 <main class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row overflow-hidden my-4 bg-white rounded-xl shadow-sm border border-gray-200">
-    <!-- ⭐ 제킬(Jekyll) 엔진이 자동으로 100개의 최신 포스트를 불러와 사이드바를 만드는 놀라운 기능입니다! -->
+    <!-- 왼쪽 사이드바 (기사 목록) -->
     <aside class="w-full md:w-80 border-r border-gray-200 flex flex-col h-full bg-white flex-shrink-0">
         <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
             <h2 class="font-bold text-gray-800 flex items-center"><i class="w-4 h-4 mr-2 text-blue-500" data-lucide="newspaper"></i>최신 요약 속보</h2>
@@ -66,8 +66,8 @@
               {% if post.category == "USA" %}{% assign flag = "🇺🇸 미국 속보" %}{% endif %}
               {% if post.category == "CHN" %}{% assign flag = "🇨🇳 중국 속보" %}{% endif %}
               
-              <!-- 현재 보고있는 기사면 파란불이 들어오도록 알아서 클래스를 붙입니다 -->
-              <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group {% if page.url == post.url %}bg-blue-50 border-l-4 border-l-blue-500{% endif %}" onclick="location.href='{{ post.url | relative_url }}'">
+              <!-- ⭐ 화면을 이동시키는 링크 대신, 배경에서 통신하는 자바스크립트 'loadNews' 함수를 호출합니다! -->
+              <div class="px-5 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition group {% if page.url == post.url %}bg-blue-50 border-l-4 border-l-blue-500{% endif %}" onclick="loadNews(event, '{{ post.url | relative_url }}')">
                   <div class="flex items-center space-x-1.5 mb-2">
                       <span class="text-[11px] font-bold text-gray-700">{{ flag }}</span>
                   </div>
@@ -78,7 +78,7 @@
         </div>
     </aside>
     
-    <!-- 이 부분에 실제 기사 내용이 자동 삽입됩니다 (애드센스 광고를 달 수 있는 꿀자리입니다!) -->
+    <!-- 오른쪽 기사 본문 영역 -->
     <section class="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         <div class="overflow-y-auto flex-1 min-h-0 p-6 md:p-10 custom-scroll" id="article-body">
             {{ content }}
@@ -87,10 +87,88 @@
 </main>
 
 <script>
-    // 제킬은 클릭할때마다 페이지가 바뀌므로 자바스크립트가 기존보다 훨씬 안정적이고 짧아집니다!
+    const twemojiOptions = { folder: 'svg', ext: '.svg', base: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/' };
+
+    // 1. 처음 화면에 로딩되었을 때 스크롤 복구 및 이모지 변환
     document.addEventListener("DOMContentLoaded", () => {
         lucide.createIcons();
-        if (window.twemoji) { twemoji.parse(document.body, { folder: 'svg', ext: '.svg', base: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/' }); }
+        if (window.twemoji) { twemoji.parse(document.body, twemojiOptions); }
+        
+        // 사용자가 F5 새로고침을 하더라도 사이드바 스크롤 위치를 예전 그대로 복구!
+        const sidebar = document.getElementById('news-list');
+        if(sidebar) {
+            const scrollPos = sessionStorage.getItem("sidebarScrollPos");
+            if(scrollPos) sidebar.scrollTop = parseInt(scrollPos, 10);
+        }
+    });
+
+    // 2. 만약 새로고침을 누르거나 창을 닫을 경우 현재까지 내렸던 사이드바 스크롤 위치를 저장!
+    window.addEventListener("beforeunload", () => {
+        const sidebar = document.getElementById('news-list');
+        if(sidebar) {
+            sessionStorage.setItem("sidebarScrollPos", sidebar.scrollTop);
+        }
+    });
+
+    // ⭐ 3. 핵심 마법 기술: 페이지를 새로고침 하지 않고, 오른쪽 본문만 몰래 바꿔치기합니다!
+    async function loadNews(event, url, isPopState = false) {
+        if(event) event.preventDefault(); 
+        
+        try {
+            // 본문 내용을 살짝 흐리게 해서 사용자가 '눌렸다'는 걸 인지하게 합니다.
+            const articleBody = document.getElementById('article-body');
+            articleBody.style.opacity = '0.5';
+
+            // 뒷단(백그라운드)에서 해당 기사 URL(HTML)을 다운받아옵니다.
+            const response = await fetch(url);
+            const html = await response.text();
+
+            // 긁어온 기사 사이트에서 '오른쪽 본문 내용'만 알맹이를 쏙 뽑아냅니다.
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('article-body').innerHTML;
+
+            // 현재 보고 있는 화면의 오른쪽에 이식합니다. 투명도 원복.
+            articleBody.innerHTML = newContent;
+            articleBody.style.opacity = '1'; 
+
+            // 왼쪽 리스트 파란색(선택됨) 하이라이트 위치 변경
+            document.querySelectorAll('#news-list > div').forEach(div => {
+                div.classList.remove('bg-blue-50', 'border-l-4', 'border-l-blue-500');
+                if(div.getAttribute('onclick') && div.getAttribute('onclick').includes(url)) {
+                    div.classList.add('bg-blue-50', 'border-l-4', 'border-l-blue-500');
+                }
+            });
+
+            // 화면은 안 바뀌지만 구글 검색엔진에 잡히고 링크 공유도 되도록 인터넷 주소창 상단 URL을 조작합니다.
+            if(!isPopState) {
+                window.history.pushState({path: url}, doc.title, url);
+            }
+            document.title = doc.title; // 탭 제목 변경
+
+            // 새로 가져온 데이터에 아이콘/이모지 다시 씌워주기
+            if (window.twemoji) { twemoji.parse(articleBody, twemojiOptions); }
+            lucide.createIcons();
+
+            // 외국어 번역 중이었다면 새로운 본문도 원래 보던 언어로 즉시 자동번역 진행!
+            const selectEl = document.querySelector('.goog-te-combo');
+            if (selectEl && selectEl.value !== '' && selectEl.value !== 'ko') {
+                setTimeout(() => { selectEl.dispatchEvent(new Event('change', { bubbles: true })); }, 300);
+            }
+
+        } catch (e) {
+            console.error("fetch 로드 에러 (안전을 위해 구버전 방식으로 이동함):", e);
+            window.location.href = url; // 실패할 경우 일반 클릭처럼 새로고침하며 이동
+        }
+    }
+
+    // 뒤로가기/앞으로가기 버튼 누르면 그에 맞게 또 자연스럽게 조작해줍니다.
+    window.addEventListener('popstate', (e) => {
+        if(e.state && e.state.path) {
+            loadNews(null, e.state.path, true);
+        } else {
+            window.location.reload();
+        }
     });
 
     function translatePage(langCode) {
