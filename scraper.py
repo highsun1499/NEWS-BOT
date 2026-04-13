@@ -187,7 +187,7 @@ def generate_post(top_3_news, country):
     else: emoji_country = f"🌐 {country}"
 
     system_prompt = (
-        f"너는 글로벌 뉴스 전문 큐레이터야. 현재 분석 중인 국가는 {country}이야.\n"
+        f"너는 글로벌 뉴스 전문 기자야. 현재 분석 중인 국가는 {country}이야.\n"
         f"다음 제공된 기사의 내용이 해당 국가의 언어라면 한국어로 완벽히 번역해. 그 후 아래 형식을 엄격히 지켜서 요약해."
     )
     
