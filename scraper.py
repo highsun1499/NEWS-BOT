@@ -279,7 +279,6 @@ if __name__ == "__main__":
             post_content = generate_post(top_3_news, target_country)
             
             if post_content:
-                # AI가 생성한 <h2>안의 제목 텍스트만 빼서 구글 검색 잡히도록(Title) 적용
                 actual_title = f"{target_country} 속보"
                 try:
                     soup = BeautifulSoup(post_content, "html.parser")
@@ -289,10 +288,10 @@ if __name__ == "__main__":
                         actual_title = raw_title.split("]", 1)[1].strip() if "]" in raw_title else raw_title
                 except: pass
 
-                # ⭐ [핵심 방어선] 파일 저장 시 제킬 형식은 그대로 지키되, 뒷부분을 KOR/CHN/USA로 저장합니다.
                 file_name = f"_posts/{date_str}-{time_str}-{target_country}.md"
-                
-                # Front matter의 카테고리도 target_country(KOR 등)로 제대로 들어갑니다.
+
+                custom_url = f"/{target_country}/{now.strftime('%Y/%m/%d')}/{time_str}-{target_country}.html"
+
                 front_matter = f"---\nlayout: post\ntitle: \"{actual_title}\"\ndate: {now.strftime('%Y-%m-%d %H:%M:%S')} +0900\ncategory: {target_country}\n---\n{post_content}\n"
                 
                 with open(file_name, "w", encoding="utf-8") as f:
