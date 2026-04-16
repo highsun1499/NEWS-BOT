@@ -265,6 +265,7 @@ def cleanup_old_news(max_files=100):
 if __name__ == "__main__":
     if not os.path.exists("_posts"): os.makedirs("_posts")
     
+    # 뉴스 수집 및 타겟 결정
     news_list, target_country = get_global_news()
     
     if news_list:
@@ -279,6 +280,7 @@ if __name__ == "__main__":
             post_content = generate_post(top_3_news, target_country)
             
             if post_content:
+                # 제목 추출
                 actual_title = f"{target_country} 속보"
                 try:
                     soup = BeautifulSoup(post_content, "html.parser")
@@ -288,16 +290,28 @@ if __name__ == "__main__":
                         actual_title = raw_title.split("]", 1)[1].strip() if "]" in raw_title else raw_title
                 except: pass
 
+                # 파일명 생성
                 file_name = f"_posts/{date_str}-{time_str}-{target_country}.md"
-
+                
+                # ⭐ [핵심 추가 요소] 제킬에게 강제할 정확한 대문자 고정 URL(permalink)을 만듭니다!!!
                 custom_url = f"/{target_country}/{now.strftime('%Y/%m/%d')}/{time_str}-{target_country}.html"
-
-                front_matter = f"---\nlayout: post\ntitle: \"{actual_title}\"\ndate: {now.strftime('%Y-%m-%d %H:%M:%S')} +0900\ncategory: {target_country}\n---\n{post_content}\n"
+                
+                # ⭐ permalink 옵션을 윗부분에 박아 넣습니다.
+                front_matter = (
+                    f"---\n"
+                    f"layout: post\n"
+                    f"title: \"{actual_title}\"\n"
+                    f"date: {now.strftime('%Y-%m-%d %H:%M:%S')} +0900\n"
+                    f"category: {target_country}\n"
+                    f"permalink: {custom_url}\n"
+                    f"---\n"
+                    f"{post_content}\n"
+                )
                 
                 with open(file_name, "w", encoding="utf-8") as f:
                     f.write(front_matter)
                 
-                print(f"💾 [파일 저장] {file_name} 생성을 완료했습니다.")
+                print(f"💾 [파일 저장] {file_name} 생성을 완료했습니다. (주소: {custom_url})")
                 time.sleep(1)
         else:
              print("⚠️[이슈 부족] 요약할 의미 있는 기사가 부족하여 이번 자동화 명령을 스킵합니다.")
