@@ -288,6 +288,7 @@ if __name__ == "__main__":
                     if h2_tag: 
                         raw_title = h2_tag.text.strip()
                         actual_title = raw_title.split("]", 1)[1].strip() if "]" in raw_title else raw_title
+                        actual_title = actual_title.replace('"', '\\"')
                 except: pass
 
                 # 파일명 생성
